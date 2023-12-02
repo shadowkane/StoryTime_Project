@@ -59,11 +59,11 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #define DEBUG_LEVEL 1 // debug levels >= 0, 0 mean no debug message will be shown
 #if !defined(BUILD_FOR_APPLICANT)
 // provide the correct privet key for the decryption
-#define PRIVET_KEY_DECRYPTION_KEY   -1  
-#define PRIVET_KEY_MODULUS          -1 
-    #if((PRIVET_KEY_DECRYPTION_KEY<0)||(PRIVET_KEY_MODULUS<0))
-        #error Public key required, you as a job applicant, you need to provide it. if you are the RH manager, please edit line 52-53 with correct privet key values
-    #endif
+#define PRIVET_KEY_DECRYPTION_KEY   0  
+#define PRIVET_KEY_MODULUS          0 
+    // #if((PRIVET_KEY_DECRYPTION_KEY<0)||(PRIVET_KEY_MODULUS<0))
+    //     #error Public key required, you as a job applicant, you need to provide it. if you are the RH manager, please edit line 52-53 with correct privet key values
+    // #endif
 #endif
 
 /* ----- Define ----- */
@@ -102,6 +102,8 @@ void vEncryption(uint32_t u32Modulus, uint32_t u32EncryptKey, uint8_t* pu8RawBuf
 // Decryption function
 void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64EncryptBuffer, uint32_t u32BufferLen, uint8_t* p64OutputBuffer);
 /*   Tools   */
+bool bIsPositiveNumber(char* pcNumberInStr, int iSize);
+uint32_t u32InputPositiveValue();
 void vNarration(char cChar);
 void vExitProgram(int iErrorValue);
 
@@ -123,7 +125,7 @@ char cCharHolder;
 uint64_t p64CipherHolder;
 int iReadcounter;
 
-void main(){
+void main(int argc, char *argv[]){
     
     #if defined(BUILD_FOR_APPLICANT)
     printf("Getting Start...\n");
@@ -209,9 +211,53 @@ void main(){
      /***********    Reader section    ***********/
     /* ---- File Decryption for Reader---- */
     #if !defined(BUILD_FOR_APPLICANT)
-    u32Modulus = PRIVET_KEY_MODULUS;
-    u32DecryptionKey = PRIVET_KEY_DECRYPTION_KEY;
+    if(argc==3)
+    {
+        // Decryption key
+        if(!bIsPositiveNumber(argv[1], strlen(argv[1])))
+        {
+            printf("Incorrect arguement %s\n", argv[1]);
+            vExitProgram(-1);
+        }
+        else
+        {
+            sscanf(argv[1], "%d", &u32DecryptionKey);
+        }
+        // Modulus
+         if(!bIsPositiveNumber(argv[2], strlen(argv[2])))
+        {
+            printf("Incorrect arguement %s\n", argv[2]);
+            vExitProgram(-1);
+        }
+        else
+        {
+            sscanf(argv[2], "%d", &u32Modulus);
+        }
+    }
+    // check if PRIVET_KEY_DECRYPTION_KEY and PRIVET_KEY_MODULUS are defined, if not, that mean we don't have saved keys
+    #if (defined(PRIVET_KEY_DECRYPTION_KEY) && defined(PRIVET_KEY_MODULUS))
+        // check if both keys are defined with positive values (if they just defined without any value, the project will not even compile)
+        else if((PRIVET_KEY_DECRYPTION_KEY>0) && (PRIVET_KEY_MODULUS>0))
+        {
+            u32DecryptionKey = PRIVET_KEY_DECRYPTION_KEY;
+            u32Modulus = PRIVET_KEY_MODULUS;
+        }
     #endif
+    else
+    {
+ 
+        printf("Enter the Decryption key number=");
+        u32DecryptionKey = u32InputPositiveValue();
+        printf("Enter the Modulus number=");
+        u32Modulus = u32InputPositiveValue();
+
+    }
+        #if(DEBUG_LEVEL>1)
+    printf("Decryption key=%d , Modulus=%d\n", u32DecryptionKey, u32Modulus);
+        #endif
+    #endif
+  
+
     // open file
     pEncryptedFile = fopen(ABOUT_ME_ENCRYPTED_FILE_NAME, "r");
     if(pEncryptedFile==NULL)
@@ -512,11 +558,56 @@ void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64Encryp
     }
 }
 
-void vExitProgram(int iErrorValue)
+bool bIsPositiveNumber(char* pcNumberInStr, int iSize)
 {
-    printf("Press Enter key to close the Application!");
-    getchar();
-    exit(iErrorValue);
+    bool bRetValue=true;
+    int iCounter;
+    // check if all characters are digits, and no negative number is allowed
+    for(iCounter=0; iCounter<iSize; iCounter++)
+    {
+        if(pcNumberInStr[iCounter]<'0' || pcNumberInStr[iCounter]>'9')
+        {
+            bRetValue= false;
+            break;
+        }
+    }
+    return bRetValue;
+}
+
+uint32_t u32InputPositiveValue()
+{
+    uint32_t u32RetValue;
+    char pcInputHolder[20];
+    int iCounter;
+    bool bIsValidInput;
+
+    while(fgets(pcInputHolder, sizeof(pcInputHolder), stdin))
+    {
+        bIsValidInput=true;
+        iCounter=0;
+        // check if all characters are digits, and no negative number is allowed
+        while(pcInputHolder[iCounter]!='\n')
+        {
+            if(pcInputHolder[iCounter]<'0' || pcInputHolder[iCounter]>'9')
+            {
+                bIsValidInput= false;
+                break;
+            }
+            iCounter++;
+        }
+        if(bIsValidInput)
+        {
+            // this is a correct input, save it as integer and break from the loop
+            if(sscanf(pcInputHolder, "%d", &u32RetValue)==1)
+            {
+                break;
+            }
+        }
+        // if reach this position, mean we didn't break from the loop or/and the input is invalide
+        printf("\nIncorrect input, try again. => ");
+    }
+
+    return u32RetValue;
 }
 
 void vNarration(char cChar)
@@ -532,4 +623,11 @@ void vNarration(char cChar)
         delay_ms(50);;
     }
     printf("%c", cChar);
+}
+
+void vExitProgram(int iErrorValue)
+{
+    printf("Press Enter key to close the Application!");
+    getchar();
+    exit(iErrorValue);
 }
