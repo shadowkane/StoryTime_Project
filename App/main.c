@@ -60,7 +60,7 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #if !defined(BUILD_FOR_APPLICANT)
 // provide the correct privet key for the decryption
 #define PRIVET_KEY_DECRYPTION_KEY   0  
-#define PRIVET_KEY_MODULUS          0 
+#define PRIVET_KEY_MODULUS          0
     // #if((PRIVET_KEY_DECRYPTION_KEY<0)||(PRIVET_KEY_MODULUS<0))
     //     #error Public key required, you as a job applicant, you need to provide it. if you are the RH manager, please edit line 52-53 with correct privet key values
     // #endif
@@ -80,7 +80,9 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 // 2nd prime number initialization
 #define PRIME1_PRIME2_DIFFERENCE    73    // random gap (or difference) between prime number 1 and prime number 2
 #endif 
-/*   File   */
+/*   Narration Symbols   */
+#define NARRATION_SYMBOLE_DISABLE_RYTHM '$'
+#define NARRATION_SYMBOLE_PAUSE         '£' 
 
 
 /* ----- Function Declaration ----- */
@@ -104,6 +106,7 @@ void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64Encryp
 /*   Tools   */
 bool bIsPositiveNumber(char* pcNumberInStr, int iSize);
 uint32_t u32InputPositiveValue();
+bool bYesNoQuestion(const char* questionMsg);
 void vNarration(char cChar);
 void vExitProgram(int iErrorValue);
 
@@ -122,11 +125,18 @@ FILE *pRawFile;
 #endif
  FILE *pEncryptedFile;
 char cCharHolder;
+int iFunctionResult;
 uint64_t p64CipherHolder;
 int iReadcounter;
 
 void main(int argc, char *argv[]){
     
+    //Initialization
+    system("MODE 100,40");
+    SMALL_RECT xTerminalSize = {0, 0, 100, 40};   //New dimensions for window in 8x12 pixel chars (Left, Top, Right, Bottom)
+    SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &xTerminalSize);   //Set new size for window
+    delay_ms(1000);
+
     #if defined(BUILD_FOR_APPLICANT)
     printf("Getting Start...\n");
 
@@ -195,21 +205,29 @@ void main(int argc, char *argv[]){
 
     // File encryption
     printf("Start file encryption...\n");
-    do{
-        cCharHolder = fgetc(pRawFile);
+    while(1){
+        iFunctionResult = fgetc(pRawFile);
+        if(iFunctionResult==EOF){
+            break;
+        }
+        cCharHolder = (char)iFunctionResult;
         vEncryption(u32Modulus, u16EncryptionKey, &cCharHolder, 1, &p64CipherHolder);
-        //printf("Cipher text of '%c'= %d\n", cCharHolder, p64CipherHolder);
+        #if(DEBUG_LEVEL>2)
+        printf("Cipher text of '%c'= %d\n", cCharHolder, p64CipherHolder);
+        #endif
         fprintf(pEncryptedFile, "%d,", p64CipherHolder);
-    }while(cCharHolder!=EOF);
+    }
     printf("Finish.\n");
     fclose(pRawFile);
     fclose(pEncryptedFile);
-    // file decryption
-    printf("----------------------------------- Decryption preview -----------------------------------\n");
+    ///ask for permission to run preview
+    if(bYesNoQuestion("Do you want to see a preview?"))
+    {
+        printf("----------------------------------- Decryption preview -----------------------------------\n");
     #endif
 
-     /***********    Reader section    ***********/
-    /* ---- File Decryption for Reader---- */
+     /***********    Applicant and Reader section    ***********/
+    /* ---- File Decryption ---- */
     #if !defined(BUILD_FOR_APPLICANT)
     if(argc==3)
     {
@@ -285,13 +303,12 @@ void main(int argc, char *argv[]){
         }
         fgetc(pEncryptedFile);// use it to move to the next char. (to skip the separator)
         vDecryption(u32Modulus, u32DecryptionKey, &p64CipherHolder, 1, &cCharHolder);
-        //printf("%c", cCharHolder);
-        //usleep(50000);
         vNarration(cCharHolder);
     }
     
     #if defined(BUILD_FOR_APPLICANT)
-    printf("\n----------------------------------- End of preview -----------------------------------\n");
+        printf("\n----------------------------------- End of preview -----------------------------------\n");
+    }//permission question end
     #endif
 
     // Exit
@@ -610,19 +627,67 @@ uint32_t u32InputPositiveValue()
     return u32RetValue;
 }
 
+bool bYesNoQuestion(const char* questionMsg)
+{
+    char cUserInput;
+    printf("%s (y/n):", questionMsg); 
+    while(1)
+    {
+        //scanf("%c", &cUserInput);
+        cUserInput = getchar();
+        fflush(stdin);
+        if((cUserInput=='y')||(cUserInput=='Y'))
+        {
+            return true;
+        }
+        else if((cUserInput=='n')||(cUserInput=='N'))
+        {
+            return false;
+        }
+        else
+        {
+            printf("Incorrect answer, please enter y for yes or n for no=>");
+        }
+    }
+}
+
 void vNarration(char cChar)
 {
+    bool bIsDisplay;
+    int iDelayDuration;
+    static bool bIsRythmDisabled = false;
+
     switch (cChar)
     {
-    case '\r':
-    case '\n':
-        delay_ms(200);
-        break;
-    
-    default:
-        delay_ms(50);;
+        case '\r':
+        case '\n':
+            iDelayDuration = 200;
+            bIsDisplay = true;
+            break;
+        case NARRATION_SYMBOLE_DISABLE_RYTHM:
+            bIsRythmDisabled = !bIsRythmDisabled;
+            iDelayDuration = 0;
+            bIsDisplay = false;
+            break;
+        case NARRATION_SYMBOLE_PAUSE:
+            iDelayDuration = 50;
+            bIsDisplay = false;
+            break;
+        default:
+            iDelayDuration = 50;
+            bIsDisplay = true;
+            break;
     }
-    printf("%c", cChar);
+    if(!bIsRythmDisabled)
+    {
+        delay_ms(iDelayDuration);
+    }
+    if(bIsDisplay)
+    {
+        printf("%c", cChar);
+        fflush(stdout);
+    }
+    
 }
 
 void vExitProgram(int iErrorValue)
