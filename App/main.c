@@ -80,10 +80,15 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 // 2nd prime number initialization
 #define PRIME1_PRIME2_DIFFERENCE    73    // random gap (or difference) between prime number 1 and prime number 2
 #endif 
-/*   Narration Symbols   */
-#define NARRATION_SYMBOLE_DISABLE_RYTHM '$'
-#define NARRATION_SYMBOLE_PAUSE         '£' 
-
+/*   Narration Tags or diractives   */
+#define NARRATION_TAG_HINT              '$'
+#define NARRATION_TAG_ENABLE_RYTHM      "start_rythm"
+#define NARRATION_TAG_DISABLE_RYTHM     "stop_rythm"
+#define NARRATION_TAG_PAUSE_S           "pause_s=" 
+#define NARRATION_TAG_PAUSE_MS          "pause_ms="
+#define NARRATION_TAG_SKIP_REQUEST      "skip_request="
+#define NARRATION_TAG_SKIP_END          "skip_end"
+//#define NARRATION_TAG_YES_NO_QUESTION   "yes_no_question="  
 
 /* ----- Function Declaration ----- */
 /*   RSA   */
@@ -123,11 +128,13 @@ uint32_t u32Modulus;
 #if defined(BUILD_FOR_APPLICANT)
 FILE *pRawFile;
 #endif
- FILE *pEncryptedFile;
+FILE *pEncryptedFile;
+/* */
 char cCharHolder;
-int iFunctionResult;
 uint64_t p64CipherHolder;
+int iFunctionResult;
 int iReadcounter;
+
 
 void main(int argc, char *argv[]){
     
@@ -651,43 +658,186 @@ bool bYesNoQuestion(const char* questionMsg)
     }
 }
 
+// typedef struct _xNarrationOptions_t{
+//     bool bIsRythmDisabled;
+
+// }xNarrationOptions_t;
+
+// bool bNarrationCommandHandler(char* pcCmd, xNarrationOptions_t* xNarrationOptions)
+// {
+//     bool bIsValidCmd = true;
+
+
+
+//     return bIsValidCmd;
+// }
+
+
 void vNarration(char cChar)
 {
-    bool bIsDisplay;
-    int iDelayDuration;
+    static char pcNarrationTagHolder[50];
+    static int iNarrationTagHolderIterator=0;
+    static bool bIsStoringNarrationOption = false;
     static bool bIsRythmDisabled = false;
+    static bool bIsSkip = false;
+    int iDelayDuration;
+    
+    /*
+    Narration has 2 sections:
+        + Configuration section: set uset configuration
+        + Run section: just narrate the text
+            - if display is 
+        
+    
+    */
 
-    switch (cChar)
+    /* Narration Config Section*/
+    // start and end narration tag hint
+    if(cChar==NARRATION_TAG_HINT)
     {
-        case '\r':
-        case '\n':
-            iDelayDuration = 200;
-            bIsDisplay = true;
-            break;
-        case NARRATION_SYMBOLE_DISABLE_RYTHM:
-            bIsRythmDisabled = !bIsRythmDisabled;
-            iDelayDuration = 0;
-            bIsDisplay = false;
-            break;
-        case NARRATION_SYMBOLE_PAUSE:
-            iDelayDuration = 50;
-            bIsDisplay = false;
-            break;
-        default:
-            iDelayDuration = 50;
-            bIsDisplay = true;
-            break;
+        // update storing narration option flag. when we detect tag hint it means it's the start or the end of the narration option
+        bIsStoringNarrationOption = !bIsStoringNarrationOption;
+        if(bIsStoringNarrationOption)
+        {
+            // in case it's the start of storing narration option command (or narration tag), we need to empty the buffer
+            iNarrationTagHolderIterator = 0;
+            pcNarrationTagHolder[0]='\0';
+        }
+        else
+        {
+            // in case it's the end of narration tag (end tag hint), we run the command
+            // make sure to set the end of command
+            pcNarrationTagHolder[iNarrationTagHolderIterator++]='\0';
+            // run narration option handler
+            //printf("cmd = %s\n", pcNarrationTagHolder);
+            if(strcmp(pcNarrationTagHolder, NARRATION_TAG_ENABLE_RYTHM)==0 && !bIsSkip)
+            {
+                //printf("\nhere is enable rythm\n");
+                bIsRythmDisabled = false;
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_DISABLE_RYTHM)==0 && !bIsSkip)
+            {
+                //printf("\nhere is disable rythm\n");
+                bIsRythmDisabled = true;
+            }
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_PAUSE_S, strlen(NARRATION_TAG_PAUSE_S))==0 && !bIsSkip)
+            {
+                //printf("\nhere is pause s\n");
+                // check if the given number is positive
+                if(bIsPositiveNumber(pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_S), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_PAUSE_S)))
+                {
+                    sscanf(pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_S), "%d", &iDelayDuration);
+                    printf("\ncmd=%s, pause duration str=%s, size=%d | pause duration=%d\n", pcNarrationTagHolder, pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_S), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_PAUSE_S), iDelayDuration);
+                    delay_ms(iDelayDuration*1000);
+                }
+                #if defined(BUILD_FOR_APPLICANT)
+                else
+                {
+                    printf("\n--You have a mistake here: pause duration should be a positive number!--\n");
+                }
+                #endif
+            }
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_PAUSE_MS, strlen(NARRATION_TAG_PAUSE_MS))==0 && !bIsSkip)
+            {
+                //printf("\nhere is pause ms\n");
+                // check if the given number is positive
+                if(bIsPositiveNumber(pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_MS), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_PAUSE_MS)))
+                {
+                    sscanf(pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_MS), "%d", &iDelayDuration);
+                    //printf("\ncmd=%s, pause duration str=%s, size=%d | pause duration=%d\n", pcNarrationTagHolder, pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_MS), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_PAUSE_MS), iDelayDuration);
+                    delay_ms(iDelayDuration);
+                }
+                #if defined(BUILD_FOR_APPLICANT)
+                else
+                {
+                    printf("\n--You have a mistake here: pause duration should be a positive number!--\n");
+                }
+                #endif
+            }
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_SKIP_REQUEST, strlen(NARRATION_TAG_SKIP_REQUEST))==0 && !bIsSkip)
+            {
+                //printf("\nask skip\n");
+                if(bYesNoQuestion(pcNarrationTagHolder+strlen(NARRATION_TAG_SKIP_REQUEST)))
+                {
+                    //printf("\nskip yes\n");
+                    bIsSkip = true;
+                }
+                else
+                {
+                    //printf("\nskip no\n");
+                    bIsSkip = false;
+                }
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_SKIP_END)==0)
+            {
+                //printf("\nend skip\n");
+                bIsSkip = false;
+            }
+            // else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_YES_NO_QUESTION, strlen(NARRATION_TAG_YES_NO_QUESTION))==0)
+            // {
+            //     if(bYesNoQuestion(pcNarrationTagHolder+strlen(NARRATION_TAG_YES_NO_QUESTION)))
+            //     {
+
+            //     }
+            //     else
+            //     {
+
+            //     }
+            // }
+            #if defined(BUILD_FOR_APPLICANT)
+            else
+            {
+                printf("\n--You have a mistake here: unknown narration command!--\n");
+            }
+            #endif
+        }
     }
-    if(!bIsRythmDisabled)
+    else if(bIsStoringNarrationOption)
     {
-        delay_ms(iDelayDuration);
+        // store narration option
+        pcNarrationTagHolder[iNarrationTagHolderIterator++]=cChar;
     }
-    if(bIsDisplay)
+    else if(!bIsSkip)
     {
+        
+
+        // each case should set those values:
+        //  bIsDisplay: true to display char, false to not
+        //  iDelayDuration: pause duration, it doesn't depend on bIsDisplay
+        //  bIsQuestion: if true, the app will display a yes/no question and wait for the user answer
+        switch (cChar)
+        {
+            case '\r':
+            case '\n':
+                iDelayDuration = 200;
+                break;
+            // case NARRATION_TAG_HINT:
+            //     // don't display tag hint and no need to pause
+            //     iDelayDuration = 0;
+            //     // update storing narration option flag. when we detect tag hint it means it's the start or the end of the narration option
+            //     bIsStoringNarrationOption = !bIsStoringNarrationOption;
+            //     // we have nothing to do in case it's thart start of storing narration option command (or narration tag)
+            //     // so in case it's the end of narration tag (end tag hint), we run the command
+            //     if(!bIsStoringNarrationOption)
+            //     {
+            //         // run narration option handler
+
+            //     }
+                
+            //     bIsQuestion = false; 
+            //     break;
+            default:
+                iDelayDuration = 50;
+                break;
+        }
+
+        if(!bIsRythmDisabled)
+        {
+            delay_ms(iDelayDuration);
+        }
         printf("%c", cChar);
         fflush(stdout);
-    }
-    
+    }   
 }
 
 void vExitProgram(int iErrorValue)

@@ -38,7 +38,10 @@ How it works:
 
 Text format:
 The application provide some options for writer to control the story narration:
- + '$': any text between 2 '$' symbol, will display the whole text at once, without any rythm
- + '£': adding this symbol will extend the stop time by 50ms, if you want to pause for 0.5 second, add 10 '£' like this '££££££££££'
-
-Note: this technique will change in the upcome update. it will be replaced by tags instead of symbols.
+ + '$': any tag or narration option should be surrounded by this symbol '$'
+ + $start_rythm$ => rythm is the narration speed, and this command will start or enable the narration rythm, it's enabled by default
+ + $stop_rythm$ => disable narration rythm 
+ + $pause_s=$ => pause narration for a duration in seconds
+ + $pause_ms=$ => pause narration for a duration in milli seconds
+ + $skip_request=$ => this will pop up a yes or no question for the reader, asking him if he want's to skip text until the $skip_end$ tag detected, you write your question after '=' 
+ + $skip_end$ => the end of skip tag
