@@ -43,6 +43,7 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 #include <math.h>
 #ifdef _WIN32
@@ -81,14 +82,44 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #define PRIME1_PRIME2_DIFFERENCE    73    // random gap (or difference) between prime number 1 and prime number 2
 #endif 
 /*   Narration Tags or diractives   */
-#define NARRATION_TAG_HINT              '$'
-#define NARRATION_TAG_ENABLE_RYTHM      "start_rythm"
-#define NARRATION_TAG_DISABLE_RYTHM     "stop_rythm"
-#define NARRATION_TAG_PAUSE_S           "pause_s=" 
-#define NARRATION_TAG_PAUSE_MS          "pause_ms="
-#define NARRATION_TAG_SKIP_REQUEST      "skip_request="
-#define NARRATION_TAG_SKIP_END          "skip_end"
-//#define NARRATION_TAG_YES_NO_QUESTION   "yes_no_question="  
+#define NARRATION_TAG_HINT                  '$'
+#define NARRATION_TAG_ENABLE_RYTHM          "start_rythm"
+#define NARRATION_TAG_DISABLE_RYTHM         "stop_rythm"
+#define NARRATION_TAG_PAUSE_S               "pause_s=" 
+#define NARRATION_TAG_PAUSE_MS              "pause_ms="
+#define NARRATION_TAG_SKIP_REQUEST_YES      "skip_on_yes="
+#define NARRATION_TAG_SKIP_REQUEST_NO       "skip_on_no="
+#define NARRATION_TAG_SKIP_END              "skip_end"
+#define NARRATION_TAG_TEXT_STYLE_DEFAULT    "text_style_default"
+#define NARRATION_TAG_TEXT_COLOR_DEFAULT    "text_color=default"
+#define NARRATION_TAG_TEXT_COLOR_RED        "text_color=red"
+#define NARRATION_TAG_TEXT_COLOR_GREEN      "text_color=green"
+#define NARRATION_TAG_TEXT_COLOR_BLUE       "text_color=blue"
+#define NARRATION_TAG_TEXT_COLOR_YELLOW     "text_color=yellow"
+#define NARRATION_TAG_TEXT_COLOR_MAGENTA    "text_color=magenta"
+#define NARRATION_TAG_TEXT_COLOR_CYNA       "text_color=cyna"
+#define NARRATION_TAG_TEXT_COLOR_WHITE      "text_color=white"
+#define NARRATION_TAG_TEXT_COLOR_BLACK      "text_color=black"
+#define NARRATION_TAG_TEXT_FONT_DEFAULT     "text_font=default"
+#define NARRATION_TAG_TEXT_FONT_BOLD        "text_font=bold"
+#define NARRATION_TAG_TEXT_FONT_ITALIC      "text_font=italic"
+#define NARRATION_TAG_TEXT_FONT_UNDERLINE   "text_font=underline"
+//#define NARRATION_TAG_YES_NO_QUESTION     "yes_no_question="  
+
+
+/* ----- New type ----- */
+typedef enum _enTextColor_t
+{
+    c_black, c_red, c_green, c_yellow, c_blue, c_magenta, c_cyna, c_white, c_default
+}enTextColor_t;
+
+typedef enum _enTextFont_t
+{
+    f_bold, f_italic, f_underline, f_default
+}enTextFont_t;
+
+static const char *TextColors[] = {"\x1B[30m", "\x1B[31m", "\x1B[32m", "\x1B[33m", "\x1B[34m", "\x1B[35m", "\x1B[36m", "\x1B[37m", "\033[39m"};
+static const char *TextFonts[] = {"\x1B[1m", "\x1B[3m", "\x1B[4m", "\033[22;24m"};
 
 /* ----- Function Declaration ----- */
 /*   RSA   */
@@ -110,7 +141,11 @@ void vEncryption(uint32_t u32Modulus, uint32_t u32EncryptKey, uint8_t* pu8RawBuf
 void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64EncryptBuffer, uint32_t u32BufferLen, uint8_t* p64OutputBuffer);
 /*   Tools   */
 bool bIsPositiveNumber(char* pcNumberInStr, int iSize);
-uint32_t u32InputPositiveValue();
+uint32_t u32GetPositiveValue();
+bool bGetChar(char* pcOut);
+void vSetTextSyleToDefault();
+void vSetTextColor(enTextColor_t color);
+void vSetTextFont(enTextFont_t font);
 bool bYesNoQuestion(const char* questionMsg);
 void vNarration(char cChar);
 void vExitProgram(int iErrorValue);
@@ -135,13 +170,20 @@ uint64_t p64CipherHolder;
 int iFunctionResult;
 int iReadcounter;
 
-
 void main(int argc, char *argv[]){
     
     //Initialization
+    // reset all terminal text attributes
+    vSetTextSyleToDefault();
+
+    // set terminal dimension
+    #ifdef _WIN32
     system("MODE 100,40");
     SMALL_RECT xTerminalSize = {0, 0, 100, 40};   //New dimensions for window in 8x12 pixel chars (Left, Top, Right, Bottom)
     SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &xTerminalSize);   //Set new size for window
+    #else
+    printf("\e[3;100;40t"); // if this ANSI command didn't work, the terminal size won't change, this is not a big problem, so we can ignore it for now --TODO: minor--
+    #endif
     delay_ms(1000);
 
     #if defined(BUILD_FOR_APPLICANT)
@@ -272,9 +314,9 @@ void main(int argc, char *argv[]){
     {
  
         printf("Enter the Decryption key number=");
-        u32DecryptionKey = u32InputPositiveValue();
+        u32DecryptionKey = u32GetPositiveValue();
         printf("Enter the Modulus number=");
-        u32Modulus = u32InputPositiveValue();
+        u32Modulus = u32GetPositiveValue();
 
     }
         #if(DEBUG_LEVEL>1)
@@ -598,7 +640,7 @@ bool bIsPositiveNumber(char* pcNumberInStr, int iSize)
     return bRetValue;
 }
 
-uint32_t u32InputPositiveValue()
+uint32_t u32GetPositiveValue()
 {
     uint32_t u32RetValue;
     char pcInputHolder[20];
@@ -634,6 +676,49 @@ uint32_t u32InputPositiveValue()
     return u32RetValue;
 }
 
+// Get or read char from user input and clear stdin buffer for the next read
+// if user entered only one char, the function will return true
+// if user entered more than one char, it will keep the first char and return false
+bool bGetChar(char* pcOut)
+{
+    char cChar;
+    int icharCounter;
+
+    // read first char
+    *pcOut = getchar();
+    icharCounter=1;
+    // get stdout buffer size and clear it
+    // since the user need to press enter to pass char, so at least we have one char ('\n') still in stdin buffer
+    do{
+        cChar = getchar();
+        icharCounter++;
+    }while(cChar!='\n' && cChar!=EOF);
+    // return result
+    if(icharCounter==2)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void vSetTextSyleToDefault()
+{
+    printf("\x1B[0m");
+}
+
+void vSetTextColor(enTextColor_t color)
+{
+    printf(TextColors[color]);
+}
+
+void vSetTextFont(enTextFont_t font)
+{
+    printf(TextFonts[font]);
+}
+
 bool bYesNoQuestion(const char* questionMsg)
 {
     char cUserInput;
@@ -641,20 +726,19 @@ bool bYesNoQuestion(const char* questionMsg)
     while(1)
     {
         //scanf("%c", &cUserInput);
-        cUserInput = getchar();
-        fflush(stdin);
-        if((cUserInput=='y')||(cUserInput=='Y'))
+        //cUserInput = getchar();
+        if(bGetChar(&cUserInput))
         {
-            return true;
+            if((cUserInput=='y')||(cUserInput=='Y'))
+            {
+                return true;
+            }
+            else if((cUserInput=='n')||(cUserInput=='N'))
+            {
+                return false;
+            }
         }
-        else if((cUserInput=='n')||(cUserInput=='N'))
-        {
-            return false;
-        }
-        else
-        {
-            printf("Incorrect answer, please enter y for yes or n for no=>");
-        }
+        printf("Incorrect answer, please enter y for yes or n for no=>");
     }
 }
 
@@ -727,7 +811,7 @@ void vNarration(char cChar)
                 if(bIsPositiveNumber(pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_S), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_PAUSE_S)))
                 {
                     sscanf(pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_S), "%d", &iDelayDuration);
-                    printf("\ncmd=%s, pause duration str=%s, size=%d | pause duration=%d\n", pcNarrationTagHolder, pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_S), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_PAUSE_S), iDelayDuration);
+                    //printf("\ncmd=%s, pause duration str=%s, size=%d | pause duration=%d\n", pcNarrationTagHolder, pcNarrationTagHolder+strlen(NARRATION_TAG_PAUSE_S), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_PAUSE_S), iDelayDuration);
                     delay_ms(iDelayDuration*1000);
                 }
                 #if defined(BUILD_FOR_APPLICANT)
@@ -754,10 +838,10 @@ void vNarration(char cChar)
                 }
                 #endif
             }
-            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_SKIP_REQUEST, strlen(NARRATION_TAG_SKIP_REQUEST))==0 && !bIsSkip)
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_SKIP_REQUEST_YES, strlen(NARRATION_TAG_SKIP_REQUEST_YES))==0 && !bIsSkip)
             {
                 //printf("\nask skip\n");
-                if(bYesNoQuestion(pcNarrationTagHolder+strlen(NARRATION_TAG_SKIP_REQUEST)))
+                if(bYesNoQuestion(pcNarrationTagHolder+strlen(NARRATION_TAG_SKIP_REQUEST_YES)))
                 {
                     //printf("\nskip yes\n");
                     bIsSkip = true;
@@ -768,10 +852,97 @@ void vNarration(char cChar)
                     bIsSkip = false;
                 }
             }
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_SKIP_REQUEST_NO, strlen(NARRATION_TAG_SKIP_REQUEST_NO))==0 && !bIsSkip)
+            {
+                //printf("\nask skip\n");
+                if(bYesNoQuestion(pcNarrationTagHolder+strlen(NARRATION_TAG_SKIP_REQUEST_NO)))
+                {
+                    //printf("\nskip no\n");
+                    bIsSkip = false;
+                }
+                else
+                {
+                    //printf("\nskip yes\n");
+                    bIsSkip = true;
+                }
+            }
             else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_SKIP_END)==0)
             {
                 //printf("\nend skip\n");
                 bIsSkip = false;
+            }
+            // default text style
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_STYLE_DEFAULT)==0)
+            {
+                //printf("\nset default text style\n");
+                vSetTextSyleToDefault();
+            }
+            // color
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_DEFAULT)==0)
+            {
+                //printf("\nset color to default\n");
+                vSetTextColor(c_default);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_RED)==0)
+            {
+                //printf("\nset color red\n");
+                vSetTextColor(c_red);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_BLUE)==0)
+            {
+                //printf("\nset color blue\n");
+                vSetTextColor(c_blue);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_GREEN)==0)
+            {
+                //printf("\nset color green\n");
+                vSetTextColor(c_green);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_YELLOW)==0)
+            {
+                //printf("\nset color yellow\n");
+                vSetTextColor(c_yellow);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_MAGENTA)==0)
+            {
+                //printf("\nset color magenta\n");
+                vSetTextColor(c_magenta);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_CYNA)==0)
+            {
+                //printf("\nset color cyna\n");
+                vSetTextColor(c_cyna);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_WHITE)==0)
+            {
+                //printf("\nset color white\n");
+                vSetTextColor(c_white);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_BLACK)==0)
+            {
+                //printf("\nset color black\n");
+                vSetTextColor(c_black);
+            }
+            // Font
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_DEFAULT)==0)
+            {
+                //printf("\nset font to default\n");
+                vSetTextFont(f_default);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_BOLD)==0)
+            {
+                //printf("\nset font bold\n");
+                vSetTextFont(f_bold);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_ITALIC)==0)
+            {
+                //printf("\nset font italic\n");
+                vSetTextFont(f_italic);
+            }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_UNDERLINE)==0)
+            {
+                //printf("\nset font underline\n");
+                vSetTextFont(f_underline);
             }
             // else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_YES_NO_QUESTION, strlen(NARRATION_TAG_YES_NO_QUESTION))==0)
             // {

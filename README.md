@@ -43,5 +43,19 @@ The application provide some options for writer to control the story narration:
  + $stop_rythm$ => disable narration rythm 
  + $pause_s=$ => pause narration for a duration in seconds
  + $pause_ms=$ => pause narration for a duration in milli seconds
- + $skip_request=$ => this will pop up a yes or no question for the reader, asking him if he want's to skip text until the $skip_end$ tag detected, you write your question after '=' 
+ + $skip_on_yes=$ => this will pop up a yes or no question for the reader, asking him if he want's to skip text by entering 'y' until the $skip_end$ tag detected, you write your question after '=' 
+ + $skip_on_no=$ => same as $skip_on_yes=$ but it will skip if 'n' is entered
  + $skip_end$ => the end of skip tag
+ Text style:
+ + $text_font=italic$ => italic font
+ + $text_font=bold$ => bold font
+ + $text_font=underline$ => underline text
+ + $text_font=default$ => user default text font
+ + $text_color=red$ => red text
+ + $text_color=blue$  =>blue text
+ + $text_color=green$ => green text
+ + $text_color=yellow$ => yellow text
+ + $text_color=cyna$ => cyna text
+ + $text_color=magenta$ => magenta text
+ + $text_color=default$ => use default texe color
+ + $text_style_default$ => clear all text attributs (color + font)
