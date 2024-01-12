@@ -55,9 +55,10 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 /* ----- Config ----- */
 #define ABOUT_ME_FILE_NAME "aboutMe.txt"
 #define ABOUT_ME_ENCRYPTED_FILE_NAME "aboutMe_encrypted.txt"
+#define CT_TITLE "Story Time App"
 #define BUILD_FOR_APPLICANT // comment this line when you want to build for reader and before you send this project
 //#define ENABLE_TEST // use this macro to include your tests and comment to easy exclude them from build
-#define DEBUG_LEVEL 1 // debug levels >= 0, 0 mean no debug message will be shown
+#define DEBUG_LEVEL 1 // debug levels >= 0, 0 means hide all debug messages
 #if !defined(BUILD_FOR_APPLICANT)
 // provide the correct privet key for the decryption
 #define PRIVET_KEY_DECRYPTION_KEY   0  
@@ -172,24 +173,47 @@ int iReadcounter;
 
 void main(int argc, char *argv[]){
     
-    //Initialization
+    /* Initialization */
+    
+    // Terminal Title
+    #ifdef _WIN32
+    SetConsoleTitle(CT_TITLE);
+    #else
+    printf("\x1b]0;" CT_TITLE "\007");
+    #endif
+    // set terminal dimension
+    #ifdef _WIN32
+    HANDLE hndl = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO xBufferInfo;
+    int ret;
+    ret = GetConsoleScreenBufferInfo(hndl,&xBufferInfo);
+    if(ret)
+    {
+        #if(DEBUG_LEVEL>3)
+        printf("Console Buffer Width: %d\n", xBufferInfo.dwSize.X);
+        printf("Console Buffer Height: %d\n", xBufferInfo.dwSize.Y);
+        printf("Console window left : %d\n", xBufferInfo.srWindow.Left);
+        printf("Console window top  : %d\n", xBufferInfo.srWindow.Top);
+        printf("Console window right: %d\n", xBufferInfo.srWindow.Right);
+        printf("Console window bot  : %d\n", xBufferInfo.srWindow.Bottom);
+        #endif
+        xBufferInfo.srWindow.Bottom = 55;
+        SetConsoleWindowInfo(hndl,true, &xBufferInfo.srWindow);
+    }
+    #else
+    // if this ANSI command didn't work, the terminal size won't change, this is not a big problem, so we can ignore it for now --TODO: minor--
+    //printf("\e[3;200;120t"); 
+    //printf("\e[4;200;120t");
+    printf("\e[8;200;120t");
+    #endif
     // reset all terminal text attributes
     vSetTextSyleToDefault();
 
-    // set terminal dimension
-    #ifdef _WIN32
-    system("MODE 100,40");
-    SMALL_RECT xTerminalSize = {0, 0, 100, 40};   //New dimensions for window in 8x12 pixel chars (Left, Top, Right, Bottom)
-    SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &xTerminalSize);   //Set new size for window
-    #else
-    printf("\e[3;100;40t"); // if this ANSI command didn't work, the terminal size won't change, this is not a big problem, so we can ignore it for now --TODO: minor--
-    #endif
     delay_ms(1000);
 
+    /***********    Applicant section    ***********/
     #if defined(BUILD_FOR_APPLICANT)
     printf("Getting Start...\n");
-
-    /***********    Applicant section    ***********/
     // generate privet and public keys
     vRsaKeyGenerator(&u32Modulus, &u16EncryptionKey, &u32DecryptionKey);
     /* Print results */
