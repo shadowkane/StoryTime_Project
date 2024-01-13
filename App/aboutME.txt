@@ -15,12 +15,22 @@ Text styles:
 $text_font=italic$ italic font $text_font=default$
 $text_font=bold$ bold font $text_font=default$
 $text_font=underline$ underline text $text_font=default$
+$text_color=white$ white text $text_color=default$
+$text_color=black$ black text $text_color=default$
 $text_color=red$ red text $text_color=default$
 $text_color=blue$ blue text $text_color=default$
 $text_color=green$ green text $text_color=default$
 $text_color=yellow$ yellow text $text_color=default$
 $text_color=cyna$ cyna text $text_color=default$
 $text_color=magenta$ magenta text $text_color=default$
+$text_color=bright_white$ bright white text $text_color=default$
+$text_color=bright_black$ bright black text $text_color=default$
+$text_color=bright_red$ bright red text $text_color=default$
+$text_color=bright_blue$ bright blue text $text_color=default$
+$text_color=bright_green$ bright green text $text_color=default$
+$text_color=bright_yellow$ bright yellow text $text_color=default$
+$text_color=bright_cyna$ bright cyna text $text_color=default$
+$text_color=bright_magenta$ bright magenta text $text_color=default$
 $text_color=red$$text_font=underline$ change text style to default like $text_style_default$this, in one step
 
 Have a nice day ;)

@@ -51,11 +51,21 @@ The application provide some options for writer to control the story narration:
  + $text_font=bold$ => bold font
  + $text_font=underline$ => underline text
  + $text_font=default$ => user default text font
+ + $text_color=white$ => white text
+ + $text_color=black$ => black text
  + $text_color=red$ => red text
- + $text_color=blue$  =>blue text
+ + $text_color=blue$ => blue text
  + $text_color=green$ => green text
  + $text_color=yellow$ => yellow text
  + $text_color=cyna$ => cyna text
  + $text_color=magenta$ => magenta text
+ + $text_color=bright_white$ => bright white text
+ + $text_color=bright_black$ => bright black text
+ + $text_color=bright_red$ => bright red text
+ + $text_color=bright_blue$ => bright blue text
+ + $text_color=bright_green$ => bright green text
+ + $text_color=bright_yellow$ => bright yellow text
+ + $text_color=bright_cyna$ => bright cyna text
+ + $text_color=bright_magenta$ => bright magenta text
  + $text_color=default$ => use default texe color
  + $text_style_default$ => clear all text attributs (color + font)

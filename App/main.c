@@ -92,35 +92,42 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #define NARRATION_TAG_SKIP_REQUEST_NO       "skip_on_no="
 #define NARRATION_TAG_SKIP_END              "skip_end"
 #define NARRATION_TAG_TEXT_STYLE_DEFAULT    "text_style_default"
-#define NARRATION_TAG_TEXT_COLOR_DEFAULT    "text_color=default"
-#define NARRATION_TAG_TEXT_COLOR_RED        "text_color=red"
-#define NARRATION_TAG_TEXT_COLOR_GREEN      "text_color=green"
-#define NARRATION_TAG_TEXT_COLOR_BLUE       "text_color=blue"
-#define NARRATION_TAG_TEXT_COLOR_YELLOW     "text_color=yellow"
-#define NARRATION_TAG_TEXT_COLOR_MAGENTA    "text_color=magenta"
-#define NARRATION_TAG_TEXT_COLOR_CYNA       "text_color=cyna"
-#define NARRATION_TAG_TEXT_COLOR_WHITE      "text_color=white"
-#define NARRATION_TAG_TEXT_COLOR_BLACK      "text_color=black"
-#define NARRATION_TAG_TEXT_FONT_DEFAULT     "text_font=default"
-#define NARRATION_TAG_TEXT_FONT_BOLD        "text_font=bold"
-#define NARRATION_TAG_TEXT_FONT_ITALIC      "text_font=italic"
-#define NARRATION_TAG_TEXT_FONT_UNDERLINE   "text_font=underline"
+#define NARRATION_TAG_TEXT_COLOR            "text_color="
+#define NARRATION_TAG_TEXT_COLOR_SIZE   11
+#define NARRATION_TAG_TEXT_FONT             "text_font="
+#define NARRATION_TAG_TEXT_FONT_SIZE    10
 //#define NARRATION_TAG_YES_NO_QUESTION     "yes_no_question="  
 
-
 /* ----- New type ----- */
+// Colors
 typedef enum _enTextColor_t
 {
-    c_black, c_red, c_green, c_yellow, c_blue, c_magenta, c_cyna, c_white, c_default
+    c_black, c_white, c_red, c_green, c_blue, c_yellow, c_magenta, c_cyna,
+    c_black_bright, c_white_bright, c_red_bright, c_green_bright, c_blue_bright, c_yellow_bright, c_magenta_bright, c_cyna_bright,
+    c_default, c_maxColorNbr
 }enTextColor_t;
-
+// Color tag list
+const char* TextColors_tags[c_maxColorNbr] = {"black", "white", "red", "green", "blue", "yellow", "magenta", "cyna",
+                                            "bright_black", "bright_white", "bright_red", "bright_green", "bright_blue", "bright_yellow", "bright_magenta", "bright_cyna",
+                                            "default"};
+// color cmds
+#ifdef _WIN32
+const WORD TextColors_windows[c_maxColorNbr] = {0x0000, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED, FOREGROUND_RED, FOREGROUND_GREEN, FOREGROUND_BLUE, FOREGROUND_RED | FOREGROUND_GREEN, FOREGROUND_BLUE | FOREGROUND_RED, FOREGROUND_BLUE | FOREGROUND_GREEN,
+                                                0x0000 | FOREGROUND_INTENSITY, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY, FOREGROUND_RED | FOREGROUND_INTENSITY, FOREGROUND_GREEN | FOREGROUND_INTENSITY, FOREGROUND_BLUE | FOREGROUND_INTENSITY, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY};
+#endif
+const char* TextColors_ansi[c_maxColorNbr] = {"\x1B[30m", "\x1B[37m", "\x1B[31m", "\x1B[32m", "\x1B[34m", "\x1B[33m", "\x1B[35m", "\x1B[36m", 
+                                            "\x1B[90m", "\x1B[97m", "\x1B[91m", "\x1B[92m", "\x1B[94m", "\x1B[93m", "\x1B[95m", "\x1B[96m"};
+// Fonts
 typedef enum _enTextFont_t
 {
-    f_bold, f_italic, f_underline, f_default
+    f_bold, f_italic, f_underline, f_default, f_maxFontNbr
 }enTextFont_t;
-
-static const char *TextColors[] = {"\x1B[30m", "\x1B[31m", "\x1B[32m", "\x1B[33m", "\x1B[34m", "\x1B[35m", "\x1B[36m", "\x1B[37m", "\033[39m"};
-static const char *TextFonts[] = {"\x1B[1m", "\x1B[3m", "\x1B[4m", "\033[22;24m"};
+// font tag list
+const char* TextFonts_tags[f_maxFontNbr] = {"bold", "italic", "underline", "default"};
+// font cmds
+const char* TextFonts_ansi[f_maxFontNbr] = {"\x1B[1m", "\x1B[3m", "\x1B[4m", "\033[22;24m"};
+// default text config ANSI cmd
+#define DEFAULT_TEXT    "\x1B[0m"
 
 /* ----- Function Declaration ----- */
 /*   RSA   */
@@ -170,36 +177,63 @@ char cCharHolder;
 uint64_t p64CipherHolder;
 int iFunctionResult;
 int iReadcounter;
+bool bIsUseAnsi;
 
 void main(int argc, char *argv[]){
-    
+    int iIterator;
     /* Initialization */
-    
+    bIsUseAnsi = true;    
+
     // Terminal Title
     #ifdef _WIN32
     SetConsoleTitle(CT_TITLE);
     #else
     printf("\x1b]0;" CT_TITLE "\007");
     #endif
-    // set terminal dimension
+    // Terminal configuration
     #ifdef _WIN32
     HANDLE hndl = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO xBufferInfo;
-    int ret;
-    ret = GetConsoleScreenBufferInfo(hndl,&xBufferInfo);
-    if(ret)
+    DWORD dwMode = 0;
+    if (hndl != INVALID_HANDLE_VALUE)
     {
-        #if(DEBUG_LEVEL>3)
-        printf("Console Buffer Width: %d\n", xBufferInfo.dwSize.X);
-        printf("Console Buffer Height: %d\n", xBufferInfo.dwSize.Y);
-        printf("Console window left : %d\n", xBufferInfo.srWindow.Left);
-        printf("Console window top  : %d\n", xBufferInfo.srWindow.Top);
-        printf("Console window right: %d\n", xBufferInfo.srWindow.Right);
-        printf("Console window bot  : %d\n", xBufferInfo.srWindow.Bottom);
-        #endif
-        xBufferInfo.srWindow.Bottom = 55;
-        SetConsoleWindowInfo(hndl,true, &xBufferInfo.srWindow);
+        // set terminal dimension
+        if(GetConsoleScreenBufferInfo(hndl,&xBufferInfo))
+        {
+            #if(DEBUG_LEVEL>3)
+            printf("Console Buffer Width: %d\n", xBufferInfo.dwSize.X);
+            printf("Console Buffer Height: %d\n", xBufferInfo.dwSize.Y);
+            printf("Console window left : %d\n", xBufferInfo.srWindow.Left);
+            printf("Console window top  : %d\n", xBufferInfo.srWindow.Top);
+            printf("Console window right: %d\n", xBufferInfo.srWindow.Right);
+            printf("Console window bot  : %d\n", xBufferInfo.srWindow.Bottom);
+            #endif
+            xBufferInfo.srWindow.Bottom = 55;
+            SetConsoleWindowInfo(hndl,true, &xBufferInfo.srWindow);
+        }
+        // Set output mode to handle virtual terminal sequences
+        if (!GetConsoleMode(hndl, &dwMode))
+        {
+            #if(DEBUG_LEVEL>1)
+            printf("Error: Couldn't get console mode\n");
+            #endif
+        }
+        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        if (!SetConsoleMode(hndl, dwMode))
+        {
+            #if(DEBUG_LEVEL>1)
+            printf("Error: Couldn't set console mode to enable virtual terminal processing\n");
+            #endif
+            // since virtual terminal processing in not enabled in windows, we turn off the use of ANSI commands 
+            bIsUseAnsi = false;
+        }
     }
+        #if(DEBUG_LEVEL>1)
+    else
+    {
+        printf("Invalid STD out handle\n");
+    }
+        #endif
     #else
     // if this ANSI command didn't work, the terminal size won't change, this is not a big problem, so we can ignore it for now --TODO: minor--
     //printf("\e[3;200;120t"); 
@@ -730,17 +764,46 @@ bool bGetChar(char* pcOut)
 
 void vSetTextSyleToDefault()
 {
-    printf("\x1B[0m");
+    if(bIsUseAnsi)
+    {
+        printf(DEFAULT_TEXT); 
+    }
+    else
+    {
+        #ifdef _WIN32
+        // since only color can change when using windows commands so the default is to change back the text color to white
+        SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), TextColors_windows[c_white]);
+        #endif
+    }
 }
 
 void vSetTextColor(enTextColor_t color)
 {
-    printf(TextColors[color]);
+    if(color<c_maxColorNbr)
+    {
+        if(color == c_default)
+        {
+            color = c_white;
+        }
+        if(bIsUseAnsi)
+        {
+            printf(TextColors_ansi[color]);
+        }
+        else
+        {
+            #ifdef _WIN32
+            SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), TextColors_windows[color]);
+            #endif
+        }
+    }    
 }
 
 void vSetTextFont(enTextFont_t font)
 {
-    printf(TextFonts[font]);
+    if(bIsUseAnsi)
+    {
+        printf(TextFonts_ansi[font]);
+    }
 }
 
 bool bYesNoQuestion(const char* questionMsg)
@@ -789,7 +852,8 @@ void vNarration(char cChar)
     static bool bIsRythmDisabled = false;
     static bool bIsSkip = false;
     int iDelayDuration;
-    
+    int iIterator;
+
     /*
     Narration has 2 sections:
         + Configuration section: set uset configuration
@@ -902,71 +966,38 @@ void vNarration(char cChar)
                 vSetTextSyleToDefault();
             }
             // color
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_DEFAULT)==0)
+else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR, NARRATION_TAG_TEXT_COLOR_SIZE)==0)
             {
-                //printf("\nset color to default\n");
-                vSetTextColor(c_default);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_RED)==0)
-            {
-                //printf("\nset color red\n");
-                vSetTextColor(c_red);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_BLUE)==0)
-            {
-                //printf("\nset color blue\n");
-                vSetTextColor(c_blue);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_GREEN)==0)
-            {
-                //printf("\nset color green\n");
-                vSetTextColor(c_green);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_YELLOW)==0)
-            {
-                //printf("\nset color yellow\n");
-                vSetTextColor(c_yellow);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_MAGENTA)==0)
-            {
-                //printf("\nset color magenta\n");
-                vSetTextColor(c_magenta);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_CYNA)==0)
-            {
-                //printf("\nset color cyna\n");
-                vSetTextColor(c_cyna);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_WHITE)==0)
-            {
-                //printf("\nset color white\n");
-                vSetTextColor(c_white);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR_BLACK)==0)
-            {
-                //printf("\nset color black\n");
-                vSetTextColor(c_black);
+                for(iIterator=0; iIterator<c_maxColorNbr; iIterator++)
+                {
+                    if(strcmp(pcNarrationTagHolder+NARRATION_TAG_TEXT_COLOR_SIZE, TextColors_tags[iIterator])==0)
+                    {
+                        vSetTextColor(iIterator);
+                    }
+                }
+                // #if defined(BUILD_FOR_APPLICANT)
+                // else
+                // {
+                //     printf("\n--You have a mistake here: uncorrect color!--\n");
+                // }
+                // #endif
             }
             // Font
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_DEFAULT)==0)
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT, NARRATION_TAG_TEXT_FONT_SIZE)==0)
             {
-                //printf("\nset font to default\n");
-                vSetTextFont(f_default);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_BOLD)==0)
-            {
-                //printf("\nset font bold\n");
-                vSetTextFont(f_bold);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_ITALIC)==0)
-            {
-                //printf("\nset font italic\n");
-                vSetTextFont(f_italic);
-            }
-            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT_UNDERLINE)==0)
-            {
-                //printf("\nset font underline\n");
-                vSetTextFont(f_underline);
+                for(iIterator=0; iIterator<f_maxFontNbr; iIterator++)
+                {
+                    if(strcmp(pcNarrationTagHolder+NARRATION_TAG_TEXT_FONT_SIZE, TextFonts_tags[iIterator])==0)
+                    {
+                        vSetTextFont(iIterator);
+                    }
+                }
+                // #if defined(BUILD_FOR_APPLICANT)
+                // else
+                // {
+                //     printf("\n--You have a mistake here: uncorrect font!--\n");
+                // }
+                // #endif
             }
             // else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_YES_NO_QUESTION, strlen(NARRATION_TAG_YES_NO_QUESTION))==0)
             // {
