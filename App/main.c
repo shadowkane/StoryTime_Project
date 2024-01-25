@@ -973,14 +973,15 @@ else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR, NARRATION_TAG_TE
                     if(strcmp(pcNarrationTagHolder+NARRATION_TAG_TEXT_COLOR_SIZE, TextColors_tags[iIterator])==0)
                     {
                         vSetTextColor(iIterator);
+                        break;
                     }
                 }
-                // #if defined(BUILD_FOR_APPLICANT)
-                // else
-                // {
-                //     printf("\n--You have a mistake here: uncorrect color!--\n");
-                // }
-                // #endif
+                #if defined(BUILD_FOR_APPLICANT)
+                if(iIterator==c_maxColorNbr)
+                {
+                    printf("\n--You have a mistake here: uncorrect color!--\n");
+                }
+                #endif
             }
             // Font
             else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_FONT, NARRATION_TAG_TEXT_FONT_SIZE)==0)
@@ -990,14 +991,15 @@ else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR, NARRATION_TAG_TE
                     if(strcmp(pcNarrationTagHolder+NARRATION_TAG_TEXT_FONT_SIZE, TextFonts_tags[iIterator])==0)
                     {
                         vSetTextFont(iIterator);
+                        break;
                     }
                 }
-                // #if defined(BUILD_FOR_APPLICANT)
-                // else
-                // {
-                //     printf("\n--You have a mistake here: uncorrect font!--\n");
-                // }
-                // #endif
+                #if defined(BUILD_FOR_APPLICANT)
+                if(iIterator==f_maxFontNbr)
+                {
+                    printf("\n--You have a mistake here: uncorrect font!--\n");
+                }
+                #endif
             }
             // else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_YES_NO_QUESTION, strlen(NARRATION_TAG_YES_NO_QUESTION))==0)
             // {
