@@ -40,7 +40,10 @@ Text format:
 The application provide some options for writer to control the story narration:
  + '$': any tag or narration option should be surrounded by this symbol '$'
  + $start_rythm$ => rythm is the narration speed, and this command will start or enable the narration rythm, it's enabled by default
- + $stop_rythm$ => disable narration rythm 
+ + $stop_rythm$ => disable narration rythm
+ + $rythm_default$ => default narration rythm speed
+ + $rythm_s=1$ => narration rythm speed is 1s
+ + $rythm_ms=20$ => narration rythm speed is 20 ms
  + $pause_s=$ => pause narration for a duration in seconds
  + $pause_ms=$ => pause narration for a duration in milli seconds
  + $skip_on_yes=$ => this will pop up a yes or no question for the reader, asking him if he want's to skip text by entering 'y' until the $skip_end$ tag detected, you write your question after '=' 

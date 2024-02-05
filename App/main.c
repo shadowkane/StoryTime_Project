@@ -1,5 +1,5 @@
 /*
-    Auther: Habib
+    Author: Habib
     Date: 12/11/2023
 
     Project description:    A simple application to encrypt/decrypt file and after the decryption, the file will be displayed in terminal.
@@ -86,6 +86,9 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #define NARRATION_TAG_HINT                  '$'
 #define NARRATION_TAG_ENABLE_RYTHM          "start_rythm"
 #define NARRATION_TAG_DISABLE_RYTHM         "stop_rythm"
+#define NARRATION_TAG_RYTHM_DEFAULT         "rythm_default"
+#define NARRATION_TAG_RYTHM_S               "rythm_s="
+#define NARRATION_TAG_RYTHM_MS              "rythm_ms="
 #define NARRATION_TAG_PAUSE_S               "pause_s=" 
 #define NARRATION_TAG_PAUSE_MS              "pause_ms="
 #define NARRATION_TAG_SKIP_REQUEST_YES      "skip_on_yes="
@@ -98,6 +101,7 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #define NARRATION_TAG_TEXT_FONT_SIZE    10
 //#define NARRATION_TAG_YES_NO_QUESTION     "yes_no_question="  
 
+#define NARRATION_RYTHM_DEFAULT_DURATION    50
 /* ----- New type ----- */
 // Colors
 typedef enum _enTextColor_t
@@ -178,11 +182,14 @@ uint64_t p64CipherHolder;
 int iFunctionResult;
 int iReadcounter;
 bool bIsUseAnsi;
+int iRythmDuration;
 
 void main(int argc, char *argv[]){
     int iIterator;
+
     /* Initialization */
-    bIsUseAnsi = true;    
+    bIsUseAnsi = true;
+    iRythmDuration=NARRATION_RYTHM_DEFAULT_DURATION;   
 
     // Terminal Title
     #ifdef _WIN32
@@ -892,6 +899,44 @@ void vNarration(char cChar)
                 //printf("\nhere is disable rythm\n");
                 bIsRythmDisabled = true;
             }
+            else if(strcmp(pcNarrationTagHolder, NARRATION_TAG_RYTHM_DEFAULT)==0 && !bIsSkip)
+            {
+                //printf("\nhere is rythm default duration\n");
+                iRythmDuration = NARRATION_RYTHM_DEFAULT_DURATION;
+            }
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_RYTHM_S, strlen(NARRATION_TAG_RYTHM_S))==0 && !bIsSkip)
+            {
+                //printf("\nhere is rythm s\n");
+                // check if the given number is positive
+                if(bIsPositiveNumber(pcNarrationTagHolder+strlen(NARRATION_TAG_RYTHM_S), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_RYTHM_S)))
+                {
+                    sscanf(pcNarrationTagHolder+strlen(NARRATION_TAG_RYTHM_S), "%d", &iRythmDuration);
+                    //printf("\ncmd=%s, rythm duration str=%s, size=%d | rythm duration=%d\n", pcNarrationTagHolder, pcNarrationTagHolder+strlen(NARRATION_TAG_RYTHM_S), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_RYTHM_S), iRythmDuration);
+                    iRythmDuration = iRythmDuration*1000;
+                }
+                #if defined(BUILD_FOR_APPLICANT)
+                else
+                {
+                    printf("\n--You have a mistake here: rythm duration should be a positive number!--\n");
+                }
+                #endif
+            }
+            else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_RYTHM_MS, strlen(NARRATION_TAG_RYTHM_MS))==0 && !bIsSkip)
+            {
+                //printf("\nhere is rythm ms\n");
+                // check if the given number is positive
+                if(bIsPositiveNumber(pcNarrationTagHolder+strlen(NARRATION_TAG_RYTHM_MS), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_RYTHM_MS)))
+                {
+                    sscanf(pcNarrationTagHolder+strlen(NARRATION_TAG_RYTHM_MS), "%d", &iRythmDuration);
+                    //printf("\ncmd=%s, rythm duration str=%s, size=%d | rythm duration=%d\n", pcNarrationTagHolder, pcNarrationTagHolder+strlen(NARRATION_TAG_RYTHM_MS), strlen(pcNarrationTagHolder)-strlen(NARRATION_TAG_RYTHM_MS), iRythmDuration);
+                }
+                #if defined(BUILD_FOR_APPLICANT)
+                else
+                {
+                    printf("\n--You have a mistake here: rythm duration should be a positive number!--\n");
+                }
+                #endif
+            }
             else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_PAUSE_S, strlen(NARRATION_TAG_PAUSE_S))==0 && !bIsSkip)
             {
                 //printf("\nhere is pause s\n");
@@ -1055,7 +1100,7 @@ else if(strncmp(pcNarrationTagHolder, NARRATION_TAG_TEXT_COLOR, NARRATION_TAG_TE
             //     bIsQuestion = false; 
             //     break;
             default:
-                iDelayDuration = 50;
+                iDelayDuration = iRythmDuration;
                 break;
         }
 

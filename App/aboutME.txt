@@ -4,6 +4,9 @@ this is a test file. Feel free to provide your story.
 $stop_rythm$preview of stopping narration rythm $start_rythm$
 pause for 5 seconds starting now ... $pause_s=5$ ends now
 pause for 500 ms starting now ... $pause_ms=500$ ends now
+$rythm_default$default narration rythm speed
+$rythm_ms=250$narration rythm speed is 250ms
+$rythm_ms=20$narration rythm speed is 20 ms$rythm_default$
 skip text when click y:
 $skip_on_yes=do you want to skip this section?$
 this section will be skipped if you click y, if you clicked n then you should be able to see this section
