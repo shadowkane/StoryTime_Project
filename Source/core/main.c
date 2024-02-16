@@ -44,8 +44,7 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <time.h>
-#include <math.h>
+#include "encryption_rsa.h"
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -76,11 +75,11 @@ RSA (Rivest–Shamir–Adleman) cryptosystem:
 #endif
 /*   RSA   */
 #if defined(BUILD_FOR_APPLICANT)
-// 1st prime number initialization
-#define UPPER_RANDOM_VALUE  0x200
-#define LOWER_RANDOM_VALUE  0x100  // since message are ASCII which mean it's between 0x00 and 0xFF so the lowest value shoudl be more 0xFF
-// 2nd prime number initialization
-#define PRIME1_PRIME2_DIFFERENCE    73    // random gap (or difference) between prime number 1 and prime number 2
+// // 1st prime number initialization
+// #define UPPER_RANDOM_VALUE  0x200
+// #define LOWER_RANDOM_VALUE  0x100  // since message are ASCII which mean it's between 0x00 and 0xFF so the lowest value shoudl be more 0xFF
+// // 2nd prime number initialization
+// #define PRIME1_PRIME2_DIFFERENCE    73    // random gap (or difference) between prime number 1 and prime number 2
 #endif 
 /*   Narration Tags or diractives   */
 #define NARRATION_TAG_HINT                  '$'
@@ -136,21 +135,21 @@ const char* TextFonts_ansi[f_maxFontNbr] = {"\x1B[1m", "\x1B[3m", "\x1B[4m", "\0
 /* ----- Function Declaration ----- */
 /*   RSA   */
 #if defined(BUILD_FOR_APPLICANT)
-// check in value is a prime number
-bool bIsPrime(int iVal);
-//bool bIsPrime_fast(int n); // fast prime number check algorithm (src: https://en.wikipedia.org/wiki/Primality_test)
-// GCD (greatest common divisor) function
-unsigned int uGCD(int a, int b);
-//int iGCD(int a, int b); // other method to find GCD
-// LCM (Least Common Multiple)
-int iLCM(int a, int b);
-// Generate the public and privet keys
-void vRsaKeyGenerator(uint32_t* u32Modulus_out, uint16_t* u16EncryptionKey_out, uint32_t* u32DecryptionKey_out);
-// encryption function
-void vEncryption(uint32_t u32Modulus, uint32_t u32EncryptKey, uint8_t* pu8RawBuffer, uint32_t u32BufferLen, uint64_t* p64EncryptBuffer);
+// // check in value is a prime number
+// bool bIsPrime(int iVal);
+// //bool bIsPrime_fast(int n); // fast prime number check algorithm (src: https://en.wikipedia.org/wiki/Primality_test)
+// // GCD (greatest common divisor) function
+// unsigned int uGCD(int a, int b);
+// //int iGCD(int a, int b); // other method to find GCD
+// // LCM (Least Common Multiple)
+// int iLCM(int a, int b);
+// // Generate the public and privet keys
+// void vRsaKeyGenerator(uint32_t* u32Modulus_out, uint16_t* u16EncryptionKey_out, uint32_t* u32DecryptionKey_out);
+// // encryption function
+// void vEncryption(uint32_t u32Modulus, uint32_t u32EncryptKey, uint8_t* pu8RawBuffer, uint32_t u32BufferLen, uint64_t* p64EncryptBuffer);
 #endif
-// Decryption function
-void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64EncryptBuffer, uint32_t u32BufferLen, uint8_t* p64OutputBuffer);
+// // Decryption function
+// void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64EncryptBuffer, uint32_t u32BufferLen, uint8_t* p64OutputBuffer);
 /*   Tools   */
 bool bIsPositiveNumber(char* pcNumberInStr, int iSize);
 uint32_t u32GetPositiveValue();
@@ -164,13 +163,15 @@ void vExitProgram(int iErrorValue);
 
 /* ----- Variable ----- */
 /*   RSA   */
-// privet key parts
-uint32_t u32DecryptionKey;
-// public key parts
-#if defined(BUILD_FOR_APPLICANT)
-uint16_t u16EncryptionKey;
-#endif
-uint32_t u32Modulus;
+// // privet key parts
+// uint32_t u32DecryptionKey;
+// // public key parts
+// #if defined(BUILD_FOR_APPLICANT)
+// uint16_t u16EncryptionKey;
+// #endif
+// uint32_t u32Modulus;
+// RSA module
+xEncryptionRsaModule_t xRsaModule;
 /*   File   */
 #if defined(BUILD_FOR_APPLICANT)
 FILE *pRawFile;
@@ -256,12 +257,12 @@ void main(int argc, char *argv[]){
     #if defined(BUILD_FOR_APPLICANT)
     printf("Getting Start...\n");
     // generate privet and public keys
-    vRsaKeyGenerator(&u32Modulus, &u16EncryptionKey, &u32DecryptionKey);
+    xRsaModule = xRsaKeyGenerator(0, 0x00ff, 73);
     /* Print results */
-    // Prive key partes
-    printf("Prive key: modulus(or n)= %d | decryption key(or d)= %d\n", u32Modulus, u32DecryptionKey);
-    // public key partes
-    printf("Public key: modulus(or n)= %d | encryption key(or e)= %d\n", u32Modulus, u16EncryptionKey);
+    // Decription key partes (Prive key partes)
+    printf("Prive key: modulus(or n)= %d | decryption key(or d)= %d\n", xRsaModule.u32Modulus, xRsaModule.u32DecryptionKey);
+    // Encryption key partes (public key partes)
+    printf("Public key: modulus(or n)= %d | encryption key(or e)= %d\n", xRsaModule.u32Modulus, xRsaModule.u32EncryptionKey);
 
     #if defined(ENABLE_TEST)
     /* ---- test ---- */
@@ -325,7 +326,7 @@ void main(int argc, char *argv[]){
             break;
         }
         cCharHolder = (char)iFunctionResult;
-        vEncryption(u32Modulus, u16EncryptionKey, &cCharHolder, 1, &p64CipherHolder);
+        vEncryption(xRsaModule, &cCharHolder, 1, &p64CipherHolder);
         #if(DEBUG_LEVEL>2)
         printf("Cipher text of '%c'= %d\n", cCharHolder, p64CipherHolder);
         #endif
@@ -416,7 +417,7 @@ void main(int argc, char *argv[]){
             break;
         }
         fgetc(pEncryptedFile);// use it to move to the next char. (to skip the separator)
-        vDecryption(u32Modulus, u32DecryptionKey, &p64CipherHolder, 1, &cCharHolder);
+        vDecryption(xRsaModule, &p64CipherHolder, 1, &cCharHolder);
         vNarration(cCharHolder);
     }
     
@@ -430,264 +431,152 @@ void main(int argc, char *argv[]){
 }
 
 #if defined(BUILD_FOR_APPLICANT)
-bool bIsPrime(int iVal)
-{
-    bool bRet;
-    int i;
+// bool bIsPrime(int iVal)
+// {
+//     bool bRet;
+//     int i;
 
-    bRet = true;
-    if(iVal>1 || iVal<-1)
-    {
-        for(i=2; i<iVal/2; i++)
-        {
-            if(iVal%i==0)
-            {
-                bRet = false;
-            }
-        }
-    }
-    else
-    {
-        bRet = false;
-    }
+//     bRet = true;
+//     if(iVal>1 || iVal<-1)
+//     {
+//         for(i=2; i<iVal/2; i++)
+//         {
+//             if(iVal%i==0)
+//             {
+//                 bRet = false;
+//             }
+//         }
+//     }
+//     else
+//     {
+//         bRet = false;
+//     }
 
-    return bRet;
-}
+//     return bRet;
+// }
 
-/*
-bool bIsPrime_fast(int n)
-{
-    if (n == 2 || n == 3)
-        return true;
+// /*
+// bool bIsPrime_fast(int n)
+// {
+//     if (n == 2 || n == 3)
+//         return true;
 
-    if (n <= 1 || n % 2 == 0 || n % 3 == 0)
-        return false;
+//     if (n <= 1 || n % 2 == 0 || n % 3 == 0)
+//         return false;
 
-    for (int i = 5; i * i <= n; i += 6)
-    {
-        if (n % i == 0 || n % (i + 2) == 0)
-            return false;
-    }
+//     for (int i = 5; i * i <= n; i += 6)
+//     {
+//         if (n % i == 0 || n % (i + 2) == 0)
+//             return false;
+//     }
 
-    return true;
-}
-*/
-unsigned int uGCD(int a, int b)
-{
-    //printf("uGCD\n");
+//     return true;
+// }
+// */
+// unsigned int uGCD(int a, int b)
+// {
+//     //printf("uGCD\n");
     
-    unsigned int iRetVal;
+//     unsigned int iRetVal;
 
-    // a and b need to be positive
-    a = (a>0)? a:-a;
-    b = (b>0)? b:-b;
-    iRetVal = (a<b)? a:b; // take the smalest number
-    iRetVal /=2;
-    for(;iRetVal>0; iRetVal--)
-    {
-        if((a%iRetVal)==0 && (b%iRetVal)==0)
-        {
-            break;
-        }
-    }
+//     // a and b need to be positive
+//     a = (a>0)? a:-a;
+//     b = (b>0)? b:-b;
+//     iRetVal = (a<b)? a:b; // take the smalest number
+//     iRetVal /=2;
+//     for(;iRetVal>0; iRetVal--)
+//     {
+//         if((a%iRetVal)==0 && (b%iRetVal)==0)
+//         {
+//             break;
+//         }
+//     }
 
-    //printf("uGCD result = %d\n", iRetVal);
-    return iRetVal;
-}
-/*
-int iGCD(int a, int b)
-{
-    printf("iGCD\n");
-    // a and b need to be positive
-    a = (a>0)? a:-a;
-    b = (b>0)? b:-b;
-    // keep substruct the small number from the big number until both are equal, the result is the GCD(a, b)
-    while(a!=b)
-    {
-        if(a>b)
-        {
-            a-=b;
-        }
-        else
-        {
-            b-=a;
-        }
-    }
+//     //printf("uGCD result = %d\n", iRetVal);
+//     return iRetVal;
+// }
+// /*
+// int iGCD(int a, int b)
+// {
+//     printf("iGCD\n");
+//     // a and b need to be positive
+//     a = (a>0)? a:-a;
+//     b = (b>0)? b:-b;
+//     // keep substruct the small number from the big number until both are equal, the result is the GCD(a, b)
+//     while(a!=b)
+//     {
+//         if(a>b)
+//         {
+//             a-=b;
+//         }
+//         else
+//         {
+//             b-=a;
+//         }
+//     }
 
-    return a; // a and b are equal, return one of them
-}
-*/
+//     return a; // a and b are equal, return one of them
+// }
+// */
 
-int iLCM(int a, int b)
-{
-    //printf("iLCM\n");
-    int iRetVal;
+// int iLCM(int a, int b)
+// {
+//     //printf("iLCM\n");
+//     int iRetVal;
     
-    // LCM(a, b) = |a*b|/GCD(a, b) "Euclidean algorithm"
-    iRetVal = a*b;
-    iRetVal = (iRetVal>0)? iRetVal:-iRetVal;
-    iRetVal = iRetVal/uGCD(a, b);
+//     // LCM(a, b) = |a*b|/GCD(a, b) "Euclidean algorithm"
+//     iRetVal = a*b;
+//     iRetVal = (iRetVal>0)? iRetVal:-iRetVal;
+//     iRetVal = iRetVal/uGCD(a, b);
 
-    //printf("iLCM result = %d\n", iRetVal);
-    return iRetVal;
-}
+//     //printf("iLCM result = %d\n", iRetVal);
+//     return iRetVal;
+// }
 
-void vRsaKeyGenerator(uint32_t* u32Modulus_out, uint16_t* u16EncryptionKey_out,  uint32_t* u32DecryptionKey_out)
-{
-    // privet key parts
-    uint16_t u16Prime1;
-    uint16_t u16Prime2;
-    uint32_t u32Modulus_CarmichaelFunction;
-    uint32_t u32DecryptionKey;
-    // public key parts
-    uint32_t u32Modulus_CarmichaelFunction_CoprimeValue;
-    uint16_t u16EncryptionKey;
-    uint32_t u32Modulus;
 
- /* -step 1- generate 2 prime numbers */
-    // set random generator seed
-    srand(time(NULL));
-    // get random value between UPPER_RANDOM_VALUE-LOWER_RANDOM_VALUE
-    
-    u16Prime1 = (rand() % (UPPER_RANDOM_VALUE - LOWER_RANDOM_VALUE + 1)) + LOWER_RANDOM_VALUE;
-    do
-    {
-        u16Prime1++;
-    } while (!bIsPrime(u16Prime1));
-    #if(DEBUG_LEVEL>2)
-    printf("Random value 1: %d\n", u16Prime1);
-    #endif
-    u16Prime2 = u16Prime1 + PRIME1_PRIME2_DIFFERENCE;
-    do
-    {
-        u16Prime2++;
-    } while (!bIsPrime(u16Prime2));
-    #if(DEBUG_LEVEL>2)
-    printf("Random value 2: %d\n", u16Prime2);
-    #endif
-   /*
-    u16Prime2 = (rand() % (UPPER_RANDOM_VALUE - LOWER_RANDOM_VALUE + 1)) + LOWER_RANDOM_VALUE;
-    do
-    {
-        u16Prime2++;
-    } while (!bIsPrime(u16Prime2));
-    //u16Prime2 = 53;
-    printf("Random value 2: %d\n", u16Prime2);
-    u16Prime1 = u16Prime2 - 73;
-    do
-    {
-        u16Prime1++;
-    } while (!bIsPrime(u16Prime1));
-    //u16Prime1 = 61;
-    printf("Random value 2: %d\n", u16Prime1);
-    */
-   
-    /* -step 2- compute modulus */
-    // modulus = prime number 1 * prime number 2
-    u32Modulus = u16Prime1 * u16Prime2;
-    #if(DEBUG_LEVEL>1)
-    printf("Modulus : %d\n", u32Modulus);
-    #endif
-    /* -step 3- compute the Carmichael function λ(u32Modulus)*/
-    // Since u32Modulus = u16Prime1 * u16Prime2 => λ(u32Modulus) = lcm(λ(u16Prime1), λ(u16Prime2))
-    // and since u16Prime1 and u16Prime1 are prime, λ(u16Prime1) = u16Prime1 − 1, and λ(u16Prime2) = u16Prime2 − 1
-    // so λ(u32Modulus) = lcm(u16Prime1 − 1, u16Prime2 − 1)
-    u32Modulus_CarmichaelFunction = iLCM(u16Prime1-1, u16Prime2-1);
-    #if(DEBUG_LEVEL>2)
-    printf("Carmichael's Function at Modulus %d : %d\n", u32Modulus, u32Modulus_CarmichaelFunction);
-    #endif
-    /* -step 4- choose encryption key (public key exponent 'e')*/
-    /*
-    // The encryption key (or e) must have those criteria:
-    //  1)   2 < e < λ(u32Modulus)
-    //  2)   e and λ(u32Modulus) are coprime, which mean gcd(e, λ(u32Modulus)) = 1
-    // note: for an efficient encryption, we should have short bit-lenght (like 16 bits) and small hamming weight (in other word, the binary representation of that value have too much zeros)
-    //       for the sake of this simple application, i will make a simple encryption using only a short bit-length (16) (i will not focus on the small hamming weight)
-    */
-    // set e to a random number of 16-bit max and make sure it's >2
-    u16EncryptionKey = (rand() % (0xFFFF - 4)) + 3;
-    // also make sure e <λ(u32Modulus)
-    u16EncryptionKey = (u16EncryptionKey>u32Modulus_CarmichaelFunction)? u32Modulus_CarmichaelFunction-1:u16EncryptionKey;
-    #if(DEBUG_LEVEL>2)
-    printf("initial i16EncryptionKe: %d\n", u16EncryptionKey);
-    #endif
-    // find e, where e and λ(u32Modulus) are coprime using GCD(e, λ(u32Modulus)) = 1 
-    while((uGCD((int)u16EncryptionKey, u32Modulus_CarmichaelFunction)!=1) && (u16EncryptionKey>2))
-    {
-        u16EncryptionKey++;
-    }
-    if(u16EncryptionKey<=2)
-    {
-        #if(DEBUG_LEVEL>0)
-        printf("Failed to get the encryption key\n");
-        #endif
-        return; // -TODO- avoid hamburger functions style
-    }
-    #if(DEBUG_LEVEL>1)
-    printf("i16EncryptionKey: %d\n", u16EncryptionKey);
-    #endif
-    /* -step 5- determine decryption key (prived key exponent 'd')*/
-    /*
-    //  solve for d ≡ e^(−1) (mod(λ(u32Modulus))) => d*e = 1 * mod(λ(u32Modulus)) (d is the multiplicative inverse of e modulo λ(u32Modulus) and it's exist because e and λ(u32Modulus) are coprime, GCD(e, λ(u32Modulus))=1 )
-    //  using Extended Euclidean algorithm: d*e = 1 mod(λ(u32Modulus)) => d*e + λ(u32Modulus)*x = 1
-    //  d*e = x*λ(u32Modulus) + 1 (x is a mult number) => (d*e) % λ(u32Modulus) = 1
-    */
-    u32DecryptionKey = 1;
-    while((uint64_t)((uint64_t)u32DecryptionKey*(uint64_t)u16EncryptionKey)%(uint64_t)u32Modulus_CarmichaelFunction != 1)
-    {
-        u32DecryptionKey++;
-    }
-    #if(DEBUG_LEVEL>1)
-    printf("u32DecryptionKey: %d\n", u32DecryptionKey);
-    #endif
-    // copy results
-    *u32Modulus_out = u32Modulus;
-    *u16EncryptionKey_out = u16EncryptionKey;
-    *u32DecryptionKey_out = u32DecryptionKey;
-}
 
-void vEncryption(uint32_t u32Modulus, uint32_t u32EncryptKey, uint8_t* pu8RawBuffer, uint32_t u32BufferLen, uint64_t* p64EncryptBuffer)
-{
-    uint32_t i, j;
-    for(i=0; i<u32BufferLen; i++)
-    {
-        //method 1
-        /*
-        // this method won't work since the values are so huge but this is the implimentation of the encryption function 
-        //   c = m^e mod(n),
-        //      c: encrypted message
-        //      m: message
-        //      e: encryption key
-        //      n: modulus
-        */
-        //p64EncryptBuffer[i] = pow((uint64_t)pu8RawBuffer[i], (uint64_t)u32EncryptKey);
-        //printf("pow of '%c'= %u\n", pu8RawBuffer[i], p64EncryptBuffer[i]);
-        //p64EncryptBuffer[i] = p64EncryptBuffer[i] % (uint64_t)u32Modulus;
+// void vEncryption(uint32_t u32Modulus, uint32_t u32EncryptKey, uint8_t* pu8RawBuffer, uint32_t u32BufferLen, uint64_t* p64EncryptBuffer)
+// {
+//     uint32_t i, j;
+//     for(i=0; i<u32BufferLen; i++)
+//     {
+//         //method 1
+//         /*
+//         // this method won't work since the values are so huge but this is the implimentation of the encryption function 
+//         //   c = m^e mod(n),
+//         //      c: encrypted message
+//         //      m: message
+//         //      e: encryption key
+//         //      n: modulus
+//         */
+//         //p64EncryptBuffer[i] = pow((uint64_t)pu8RawBuffer[i], (uint64_t)u32EncryptKey);
+//         //printf("pow of '%c'= %u\n", pu8RawBuffer[i], p64EncryptBuffer[i]);
+//         //p64EncryptBuffer[i] = p64EncryptBuffer[i] % (uint64_t)u32Modulus;
             
-        // method 2 (fast and working method with huge number)
-        p64EncryptBuffer[i] = 1;
-        for(j=0; j<u32EncryptKey; j++)
-        {
-            p64EncryptBuffer[i] = (p64EncryptBuffer[i]*pu8RawBuffer[i]) % (uint64_t)u32Modulus;
-        }
+//         // method 2 (fast and working method with huge number)
+//         p64EncryptBuffer[i] = 1;
+//         for(j=0; j<u32EncryptKey; j++)
+//         {
+//             p64EncryptBuffer[i] = (p64EncryptBuffer[i]*pu8RawBuffer[i]) % (uint64_t)u32Modulus;
+//         }
         
-    }
-}
+//     }
+// }
 #endif
-void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64EncryptBuffer, uint32_t u32BufferLen, uint8_t* p64OutputBuffer)
-{
-    uint32_t i, j;
-    uint64_t u64DecryptionHolder;
-    for(i=0; i<u32BufferLen; i++)
-    {
-        u64DecryptionHolder = 1;
-        for(j=0; j<u32DecrypKey; j++)
-        {
-            u64DecryptionHolder = (u64DecryptionHolder*p64EncryptBuffer[i]) % (uint64_t)u32Modulus;
-        }
-        p64OutputBuffer[i] = (uint8_t)u64DecryptionHolder;
-    }
-}
+// void vDecryption(uint32_t u32Modulus, uint32_t u32DecrypKey, uint64_t* p64EncryptBuffer, uint32_t u32BufferLen, uint8_t* p64OutputBuffer)
+// {
+//     uint32_t i, j;
+//     uint64_t u64DecryptionHolder;
+//     for(i=0; i<u32BufferLen; i++)
+//     {
+//         u64DecryptionHolder = 1;
+//         for(j=0; j<u32DecrypKey; j++)
+//         {
+//             u64DecryptionHolder = (u64DecryptionHolder*p64EncryptBuffer[i]) % (uint64_t)u32Modulus;
+//         }
+//         p64OutputBuffer[i] = (uint8_t)u64DecryptionHolder;
+//     }
+// }
 
 bool bIsPositiveNumber(char* pcNumberInStr, int iSize)
 {
