@@ -14,4 +14,7 @@
             "binaryArgs": []
         }
     ],
+    "conventionalCommits.scopes": [
+        "test"
+    ],
 }
