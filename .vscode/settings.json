@@ -15,6 +15,7 @@
         }
     ],
     "conventionalCommits.scopes": [
-        "test"
+        "test",
+        "Makefile"
     ],
 }
