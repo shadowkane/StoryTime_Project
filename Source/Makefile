@@ -4,14 +4,18 @@
 # to prevent user from building unwanted version of the project that causes a problem, like  changing the pre-set decryption key, the user must provide the target name using "TARGET=<target name>"
 # also release is the defaut build
 # Cmds:
-# 	Build project:
-# 		make TARGET=writer : build release version for the writer (encryption mode + preview)
-# 		make TARGET=reader : build release version for the reader (decryption mode)
-# 		make TARGET=test   : build and run all tests
+#
+# 	+ Build project:
+# 		make TARGET=writer 						: build release version for the writer (encryption mode + preview)
+# 		make TARGET=reader 						: build release version for the reader (decryption mode)
+# 		make TARGET=test   						: build and run all tests
+#		make TARGET=writer release 				: build release version for the writer
+#		make TARGET=writer debug debug_level=3 	: build debug version for the writer with debug level = 3 (debug levels are 0..3 and default is 0)
 # 		Note: release and debug will work only with TARGET=writer and TARGET=reader (exp: make TARGET=reader debug, make TARGET=writer release)
-# 	Clean project:
-#		make clean 	: clean build folder (remove reader and writer, release and debug)
-#		make clean TARGET=<target name> : only clean the target folder (writer, reader or test)
+#
+# 	+ Clean project:
+#		make clean 								: clean build folder (remove reader and writer, release and debug)
+#		make clean TARGET=<target name> 		: only clean the target folder (writer, reader or test)
 
 
 # |--Source
@@ -40,9 +44,9 @@ $(info MAKECMDGOALS=> $(MAKECMDGOALS))
 
 PROJECT_NAME =StoryTime
 # Toolchain
-CC = gcc
+CC = gcc -std=c11
 # Flags
-CFLAGS += -std=c11 -Wall -Wextra
+CFLAGS += -Wall -Wextra
 
 
 # Target
@@ -51,6 +55,7 @@ ifeq ($(TARGET),test)
 BIN_NAME = test
 else ifeq ($(TARGET),writer)
 BIN_NAME = $(PROJECT_NAME)_ForWriter
+CFLAGS += -DBUILD_FOR_WRITER
 else ifeq ($(TARGET),reader)
 BIN_NAME = $(PROJECT_NAME)
 else ifeq ($(filter $(MAKECMDGOALS),clean),)
@@ -167,9 +172,9 @@ endif
 release: $(BIN)
 
 ifeq ($(debug_level), )
-debug: CFLAGS += -g -Ddebug=0
+debug: CFLAGS += -g -DDEBUG=0
 else
-debug: CFLAGS += -g -Ddebug=$(debug_level)
+debug: CFLAGS += -g -DDEBUG=$(debug_level)
 endif
 debug: $(BIN)
 

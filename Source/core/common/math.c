@@ -4,6 +4,7 @@
     Description: provide math tools
 */
 #include "math.h"
+#include "config.h"
 #include <math.h>
 
 unsigned int uGCD(int a, int b)

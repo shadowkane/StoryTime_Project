@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include "config.h"
 #include "math.h"
 
 xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxValue, uint16_t u16RandomValue)
@@ -49,7 +50,11 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     if(u16MinValue<u16MaxValue){
         // to set a u16RandomLowerValue in a safe way, we need to add a numer to u16RandomLowerValue, in which that number is between 1 and (0xffff - u16MaxValue) to make sure u16RandomLowerValue<=0xFFFF
         // random value we will add to both u16RandomLowerValue and u16RandomUpperValue
-        iVar = (rand() % (0xFFFF-u16MaxValue)) + 1; // not optimized instruction : (rand() % ((0xFFFF-u16MaxValue) -1 +1)) + 1;
+        //iVar = (rand() % (0xFFFF-u16MaxValue)) + 1; // not optimized instruction : (rand() % ((0xFFFF-u16MaxValue) -1 +1)) + 1;
+        iVar = (rand() % (0x02FF-u16MaxValue)) + 1; // a very large number can slow the encryption and the decryption, to avoid reach a very big number we lower max range 0xFFFF to 0x02FF
+        #if(DEBUG>2)
+        printf("Random var: %d\n", iVar);
+        #endif
         u16RandomUpperValue = u16MaxValue + (uint16_t)iVar;
         u16RandomLowerValue = u16MinValue + (uint16_t)iVar;
     }
@@ -59,13 +64,21 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
         u16RandomUpperValue = 0x200;
     }
     
+    #if(DEBUG>2)
+    printf("Passed lower value: %d\n", u16MinValue);
+    printf("new lower value: %d\n", u16RandomLowerValue);
+    printf("Passed upper value: %d\n", u16MaxValue);
+    printf("new upper value: %d\n", u16RandomUpperValue);
+    printf("Passed Random value: %d\n", u16RandomValue);
+    #endif
+
     // get random value between u16RandomUpperValue-u16RandomLowerValue
     u16Prime1 = (rand() % (u16RandomUpperValue - u16RandomLowerValue + 1)) + u16RandomLowerValue;
     do
     {
         u16Prime1++;
     } while (!bIsPrime(u16Prime1));
-    #if(DEBUG_LEVEL>2)
+    #if(DEBUG>2)
     printf("Random value 1: %d\n", u16Prime1);
     #endif
     // u16RandomValue is the gap between u16Prime2 and u16Prime1 and we need to make sure u16Prime2 <= 0xFFFF
@@ -83,7 +96,7 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     {
         u16Prime2++;
     } while (!bIsPrime(u16Prime2));
-    #if(DEBUG_LEVEL>2)
+    #if(DEBUG>2)
     printf("Random value 2: %d\n", u16Prime2);
     #endif
    /*
@@ -106,7 +119,7 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     /* -step 2- compute modulus */
     // modulus = prime number 1 * prime number 2
     u32Modulus = u16Prime1 * u16Prime2;
-    #if(DEBUG_LEVEL>1)
+    #if(DEBUG>1)
     printf("Modulus : %d\n", u32Modulus);
     #endif
     /* -step 3- compute the Carmichael function λ(u32Modulus)*/
@@ -114,7 +127,7 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     // and since u16Prime1 and u16Prime1 are prime, λ(u16Prime1) = u16Prime1 − 1, and λ(u16Prime2) = u16Prime2 − 1
     // so λ(u32Modulus) = lcm(u16Prime1 − 1, u16Prime2 − 1)
     u32Modulus_CarmichaelFunction = iLCM(u16Prime1-1, u16Prime2-1);
-    #if(DEBUG_LEVEL>2)
+    #if(DEBUG>2)
     printf("Carmichael's Function at Modulus %d : %d\n", u32Modulus, u32Modulus_CarmichaelFunction);
     #endif
     /* -step 4- choose encryption key (public key exponent 'e')*/
@@ -129,7 +142,7 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     u16EncryptionKey = (rand() % (0xFFFF - 4)) + 3;
     // also make sure e <λ(u32Modulus)
     u16EncryptionKey = (u16EncryptionKey>u32Modulus_CarmichaelFunction)? u32Modulus_CarmichaelFunction-1:u16EncryptionKey;
-    #if(DEBUG_LEVEL>2)
+    #if(DEBUG>2)
     printf("initial i16EncryptionKe: %d\n", u16EncryptionKey);
     #endif
     // find e, where e and λ(u32Modulus) are coprime using GCD(e, λ(u32Modulus)) = 1 
@@ -139,12 +152,12 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     }
     if(u16EncryptionKey<=2)
     {
-        #if(DEBUG_LEVEL>0)
+        #if(DEBUG>0)
         printf("Failed to get the encryption key\n");
         #endif
         return xRsaModule; // -TODO- avoid hamburger functions style
     }
-    #if(DEBUG_LEVEL>1)
+    #if(DEBUG>1)
     printf("i16EncryptionKey: %d\n", u16EncryptionKey);
     #endif
     /* -step 5- determine decryption key (prived key exponent 'd')*/
@@ -158,7 +171,7 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     {
         u32DecryptionKey++;
     }
-    #if(DEBUG_LEVEL>1)
+    #if(DEBUG>1)
     printf("u32DecryptionKey: %d\n", u32DecryptionKey);
     #endif
     // copy results
@@ -209,8 +222,14 @@ void vDecryption(xEncryptionRsaModule_t xRsaModule, uint64_t *pu64Buffer, uint32
 {
     uint32_t i, j;
     uint64_t u64DecryptionHolder;
+
     for(i=0; i<u32BufferLen; i++)
     {
+        // decription => m = c^d mod(n)
+        //      m : message to send
+        //      c : cipher text or crypted message
+        //      d : decryption key
+        //      n : modulus
         u64DecryptionHolder = 1;
         for(j=0; j<xRsaModule.u32DecryptionKey; j++)
         {
