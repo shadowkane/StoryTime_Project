@@ -1,5 +1,5 @@
 #include "test_header.h"
-#include "encryption_RSA.h"
+#include "encryption_rsa.h"
 #include <assert.h>
 #include <stdio.h>
 
