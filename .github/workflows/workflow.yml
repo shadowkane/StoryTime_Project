@@ -12,7 +12,8 @@ jobs:
         List_os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-        - uses: actions/checkout@v3
-        - run: cd Source
+        - name: Checkout
+          uses: actions/checkout@v4
         - name: run makefile for testing
+          working-directory: ./Source
           run: make TARGET=test
