@@ -9,14 +9,36 @@ on:
 
 jobs:
   build:
+    name: Build&Test
     runs-on: ${{ matrix.List_os }}
     strategy:
+      fail-fast: true # we need to make sure the projects works in all OS systems (if any OS system fails, stop all jobs and return error)
       matrix:
         List_os: [ubuntu-latest, macos-latest, windows-latest]
-
     steps:
         - name: Checkout
           uses: actions/checkout@v4
         - name: run makefile for testing
           working-directory: ./Source
           run: make TARGET=test
+        - name: Build a Reader version
+          working-directory: ./Source
+          run: make TARGET=reader
+        - name: Build a Writer version
+          working-directory: ./Source
+          run: make TARGET=writer
+  report:
+    name: Build&Test Result
+    runs-on: ubuntu-latest
+    if: always()
+    needs: build
+    steps:
+    - name: report
+      shell: bash
+      run: |
+        if [ "${{ needs.build.result }}" == "success" ]; then
+          echo "All Build&Test checks completed successfully."
+        else
+          echo "At least one Build&Test check has failed."
+          echo "::error::At least one Build&Test check has failed."
+        fi
