@@ -1,3 +1,4 @@
+#include "test_header.h"
 #include <assert.h>
 #include <stdio.h>
 

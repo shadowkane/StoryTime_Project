@@ -1,3 +1,4 @@
+#include "test_header.h"
 #include "math.h"
 #include <assert.h>
 #include <stdio.h>
@@ -14,8 +15,6 @@
 
 #define VALIDE_PRIME_VALUE      56813
 #define VALIDE_IS_PRIME_RESULT  true
-
-int test_math();
 
 int test_math()
 {

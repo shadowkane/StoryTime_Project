@@ -1,3 +1,4 @@
+#include "test_header.h"
 #include "encryption_RSA.h"
 #include <assert.h>
 #include <stdio.h>
@@ -9,8 +10,6 @@
 #define MESSAGE_LEN 11
 uint8_t pu8ValidMessage[MESSAGE_LEN] = {'D','E','A','D','b','e','e','f','0','-','9'};
 uint64_t pu64ValidCipher[MESSAGE_LEN] = {34442301,45623862,59782298,34442301,51338302,59664878,59664878,32089094,58812583,12376631,33228134};
-
-int test_encryption_rsa();
 
 int test_encryption_rsa()
 {

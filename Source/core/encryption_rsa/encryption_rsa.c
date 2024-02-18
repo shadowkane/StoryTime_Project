@@ -35,7 +35,7 @@ xEncryptionRsaModule_t xRsaKeyGenerator(uint16_t u16MinValue, uint16_t u16MaxVal
     uint16_t u16Prime2;
     uint32_t u32Modulus_CarmichaelFunction;
     uint32_t u32DecryptionKey;
-    uint32_t u32Modulus_CarmichaelFunction_CoprimeValue;
+    //uint32_t u32Modulus_CarmichaelFunction_CoprimeValue;
     uint16_t u16EncryptionKey;
     uint32_t u32Modulus;
 

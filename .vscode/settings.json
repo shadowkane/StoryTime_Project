@@ -1,7 +1,8 @@
 {
     "files.associations": {
         "math.h": "c",
-        "encryption_rsa.h": "c"
+        "encryption_rsa.h": "c",
+        "assert.h": "c"
     },
     "makefile.makefilePath": "${workspaceFolder}/App",
     "makefile.makePath": "C:/msys64/usr/bin",
