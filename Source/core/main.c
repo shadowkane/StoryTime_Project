@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include "config.h"
 #include "encryption_rsa.h"
@@ -122,13 +122,13 @@ FILE *pRawFile;
 FILE *pEncryptedFile;
 /* */
 char cCharHolder;
-uint64_t p64CipherHolder;
+uint64_t u64CipherHolder;
 int iFunctionResult;
 int iReadcounter;
 bool bIsUseAnsi;
 int iRythmDuration;
 
-void main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
     int iIterator;
     uint32_t u32DecryptionKey;
     uint32_t u32Modulus;
@@ -274,11 +274,11 @@ void main(int argc, char *argv[]){
             break;
         }
         cCharHolder = (char)iFunctionResult;
-        vEncryption(xRsaModule, &cCharHolder, 1, &p64CipherHolder);
+        vEncryption(xRsaModule, (uint8_t*)&cCharHolder, 1, &u64CipherHolder);
         #if(DEBUG>2)
-        printf("Cipher text of '%c'= %d\n", cCharHolder, p64CipherHolder);
+        printf("Cipher text of '%c'= %"PRIu64"\n", cCharHolder, u64CipherHolder);
         #endif
-        fprintf(pEncryptedFile, "%d,", p64CipherHolder);
+        fprintf(pEncryptedFile, "%"PRIu64",", u64CipherHolder);
     }
     printf("Finish.\n");
     fclose(pRawFile);
@@ -362,12 +362,12 @@ void main(int argc, char *argv[]){
     // read, encrypte and display file
     while(1)
     {
-        if(fscanf(pEncryptedFile,"%d", &p64CipherHolder)<1)
+        if(fscanf(pEncryptedFile,"%"PRIu64, &u64CipherHolder)<1)
         {
             break;
         }
         fgetc(pEncryptedFile);// use it to move to the next char. (to skip the separator)
-        vDecryption(xRsaModule, &p64CipherHolder, 1, &cCharHolder);
+        vDecryption(xRsaModule, &u64CipherHolder, 1, (uint8_t*)&cCharHolder);
         vNarration(cCharHolder);
     }
     
