@@ -1,74 +1,113 @@
 # StoryTime_Project
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/shadowkane/StoryTime_Project/workflow.yml)
+![GitHub License](https://img.shields.io/github/license/shadowkane/StoryTime_Project)
+![GitHub top language](https://img.shields.io/github/languages/top/shadowkane/StoryTime_Project)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?logo=ubuntu&logoColor=white)
 
 StoryTime is a project where you provide your story and the app will turn it into a narrative mode.
-You can present your stories to your reader in the way you like it, since the way you want it is always the right way.
-and to make this happen, few factors need to be set by you, like narration speed, pauses, background and tone.
-this is the project idea i'm going to work on.
+You can present your stories to your reader in the way you like it, because the way you want it is always the right way.
+and to make this happen, few factors need to be set by you, like narration speed, text color and font, background sound and vocal tone.
+this is the project idea i'm working on.
 
-The project has just started and still ongoing and i will try to upload new updates frequently, but for now this is what the project does.
+The project has just started and still ongoing and i will try to update it frequently, but for now this is what the project does.
 the project has 2 different builds, one for the writer and the other for the reader.
-+ Writer release:
- - Since the whole idea is about making a story, I thought it's better to prevent the reader from revealing its events and preserve the way the writer want to present the story.So i just included an encryption system to the project to encrypt the story.
-+ Reader release:
- - Decrypt the story file and run the narration mode
+### Writer version:
+  + Since the whole idea is about making a story, I believe, it's better to protect the reader from spoilers and prevent him from having access to the raw story text to preserve the way the writer wants to present his story. To do so, we have to :
+    + Light weight application.
+    + One application for all stories.
+    + Easy to use by the writer.
+    + Protects the raw story text from the readers
+  + Solution is :
+    + Use an Encryption system to protection the story.
+    + Use directives or tags to set the narration style.
+  + Show a preview of the story.
+### Reader version:
+  + Decrypt the story file and run the narration system.
 
-How it works:
-+ Writer:
- - Before you build the project:
-    Provide your story as a text.txt file, and in the config section, set the file name
-    Set the encrypted file name you will generate
-    Make sure to define "BUILD_FOR_APPLICANT", the project already includes it in config section, just uncomment it
- - In Runtime, the app will automatically: 
-    Generate Encryption(public)/Decryption(private) keys, by the way, the encryption system used is RSA
-    Encrypt the file and generate the encrypted file
- - After running the App and before you close it make sure to save the keys and send the private key to the reader. i'm using those terms 'private key', 'public key' but in fact each one is a pair of keys:
-   Private key includes: decryption key and modulus value
-   Public key includes: encryption key and modulus value
-   sice the Prived key include the decryption key, you need to send that to the reader or build the app with that key and send the app to the reader
-+ Reader:
- - before you build the app:
-   make sure to remove or comment the define 'BUILD_FOR_APPLICANT'
-   you have the option to pre-set the private key in config section so the reader won't need to set them up
- -App runtime and one of the 3 cases will happen
-   If the reader runs the app using cmd line and provides the private key (like this: App.exe <decryption key> <modulus value>), the app will consider those as private key and use them for decryption
-   If the App runs without parameters (using App.exe directly), the app will check if Private Key pre-set, and use them for decryption
-   If no private key was pre-set, it will ask the reader for those keys
- -The app will decrypt the file and start
+# Build
+To build the project, you can use the make command with a variety of options:
+>`make TARGET=<target_name> <build_type> [debug_level=<debug_level_number>]`
+- <Target_name>: writer, reader or test. (required)
+- <build_type>: release or debug. release is by default. only for TARGET=writer or reader. (opional)
+- <debug_level_number>: a number between 0..3, 0 mean show no information. by default is 0 and works only with `debug`. (optional)
+> `make clean [TARGET=<target_name>]`
+- <target_name>: specify the build target you want to clean, writer, reader or test. if you don't specify the target, the command will clean the entire build folder for reader and writer.
+### examples:
+`make TARGET=test` => test the project modules.
 
+`make TARGET=writer` => build a release version for the writer.
 
-Text format:
+`make TARGET=reader debug debug_level=2` => build a debug version for the reader with debug level = 2.
+
+`make clean TARET=test` => clean test build folder
+
+`make clean` => clean the entire build folder
+
+# How it works
+You need to build two versions, writer and reader, this is how each one is working: 
+### Writer:
+- Before you build the project:
+  + Provide your story as a text file and use tags to customize your narration style.
+  + Set your configuration in config.h file by providing the path to your file and set the encrypted file name you will generate(optional), olso you can change the application title.
+- After building the Application
+  + In Runtime, the app will automatically generate the encryption and decryption key pair, make sure to save the decryption key pair to use it in the reader version of the application.
+
+  Note: by the way, the encryption system used is RSA
+  
+### Reader:
+- Before you build the app you have few option:
+  + Pre-set the Decryption key pair in the config.h file so the reader won't need to set anything.
+  + instead of using the config.h to set the decryption key, you can provide the reader with the decryption key pair and he will set them in the application runtime.
+- App runtime, one of the 3 cases will happen:
+  + If the reader runs the app using cmd line and provides the private key (like this: `App.exe <decryption_key> <modulus_value>`), the app will consider those as private key and use them for decryption.
+  + If the App runs without parameters (using just `App.exe`), the app will check if the decryption Key pair was already pre-set to be able to decrypt and start narration.
+  If no private key was pre-set, it will ask the reader for those keys
+
+# Narration Style
 The application provide some options for writer to control the story narration:
- + '$': any tag or narration option should be surrounded by this symbol '$'
- + $start_rythm$ => rythm is the narration speed, and this command will start or enable the narration rythm, it's enabled by default
- + $stop_rythm$ => disable narration rythm
- + $rythm_default$ => default narration rythm speed
- + $rythm_s=1$ => narration rythm speed is 1s
- + $rythm_ms=20$ => narration rythm speed is 20 ms
- + $pause_s=$ => pause narration for a duration in seconds
- + $pause_ms=$ => pause narration for a duration in milli seconds
- + $skip_on_yes=$ => this will pop up a yes or no question for the reader, asking him if he want's to skip text by entering 'y' until the $skip_end$ tag detected, you write your question after '=' 
- + $skip_on_no=$ => same as $skip_on_yes=$ but it will skip if 'n' is entered
- + $skip_end$ => the end of skip tag
- Text style:
- + $text_font=italic$ => italic font
- + $text_font=bold$ => bold font
- + $text_font=underline$ => underline text
- + $text_font=default$ => user default text font
- + $text_color=white$ => white text
- + $text_color=black$ => black text
- + $text_color=red$ => red text
- + $text_color=blue$ => blue text
- + $text_color=green$ => green text
- + $text_color=yellow$ => yellow text
- + $text_color=cyna$ => cyna text
- + $text_color=magenta$ => magenta text
- + $text_color=bright_white$ => bright white text
- + $text_color=bright_black$ => bright black text
- + $text_color=bright_red$ => bright red text
- + $text_color=bright_blue$ => bright blue text
- + $text_color=bright_green$ => bright green text
- + $text_color=bright_yellow$ => bright yellow text
- + $text_color=bright_cyna$ => bright cyna text
- + $text_color=bright_magenta$ => bright magenta text
- + $text_color=default$ => use default texe color
- + $text_style_default$ => clear all text attributs (color + font)
+ + Any tag or narration option should be surrounded by this symbol '$'. (exp: \$\<tag>\$)
+ + Tags:
+    + start_rythm => rythm is the narration speed, and this command will start or enable the narration rythm, it's enabled by default
+    + stop_rythm => disable narration rythm
+    + rythm_default => set narration rythm speed to default
+    + rythm_s=<numbfer_of_seconds> => set narration rythm speed to 1 char per <numbfer_of_seconds> second
+    + rythm_ms=<numbfer_of_milliseconds> => set narration rythm speed to 1 char per <numbfer_of_milliseconds> milliseconds
+    + pause_s=<pause_duration> => pause narration for a duration in seconds
+    + pause_ms=<pause_duration> => pause narration for a duration in milli seconds
+    + skip_on_yes=what you want to say => this will pop up a yes or no question for the reader, asking him if he want's to skip text by entering 'y' until the \$skip_end\$ tag detected, you write your question after '=' or leae it emty
+    + skip_on_no=what you want to say => same as $skip_on_yes=$ but it will skip if 'n' is entered
+    + skip_end => the end of skip tag
+    + Text style:
+      + Font:
+        + text_font=italic => italic font
+        + text_font=bold => bold font
+        + text_font=underline => underline text
+        + text_font=default => user default text font
+      + Color:
+        + text_color=white => white text
+        + text_color=black => black text
+        + text_color=red => red text
+        + text_color=blue => blue text
+        + text_color=green => green text
+        + text_color=yellow => yellow text
+        + text_color=cyna => cyna text
+        + text_color=magenta => magenta text
+        + text_color=bright_white => bright white text
+        + text_color=bright_black => bright black text
+        + text_color=bright_red => bright red text
+        + text_color=bright_blue => bright blue text
+        + text_color=bright_green => bright green text
+        + text_color=bright_yellow => bright yellow text
+        + text_color=bright_cyna => bright cyna text
+        + text_color=bright_magenta => bright magenta text
+        + text_color=default => use default texe color
+      + text_style_default => clear all text attributs (color + font)
+
+### [This is a link to an example of a text](docs/aboutMe.txt), you can see results in the next section.
+# Results
+A writer version in windows
+![alt text](<docs/images/StoryTime windows writer.JPG>)
+
+A reader version in ubuntu
+![alt text](<docs/images/StoryTime ubuntu reader.JPG>)
