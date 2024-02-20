@@ -66,7 +66,7 @@ You need to build two versions, writer and reader, this is how each one is worki
 
 # Narration Style
 The application provide some options for writer to control the story narration:
- + Any tag or narration option should be surrounded by this symbol '$'. (exp: \$\<tag>\$)
+ + Any tag or narration option should be surrounded by this symbol '$'. (exp: `$<tag>$`)
  + Tags:
     + start_rythm => rythm is the narration speed, and this command will start or enable the narration rythm, it's enabled by default
     + stop_rythm => disable narration rythm
