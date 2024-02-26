@@ -104,6 +104,7 @@ const char* TextFonts_ansi[f_maxFontNbr] = {"\x1B[1m", "\x1B[3m", "\x1B[4m", "\0
 /*   Tools   */
 bool bIsPositiveNumber(char* pcNumberInStr, int iSize);
 uint32_t u32GetPositiveValue();
+void vGetString(char pcStrHolder[], char* pcMessage);
 bool bGetChar(char* pcOut);
 void vSetTextSyleToDefault();
 void vSetTextColor(enTextColor_t color);
@@ -116,6 +117,7 @@ void vExitProgram(int iErrorValue);
 /*   RSA   */
 xEncryptionRsaModule_t xRsaModule;
 /*   File   */
+char pcFile_str[MAX_FILE_NAME_LEN];
 #if defined(BUILD_FOR_WRITER)
 FILE *pRawFile;
 #endif
@@ -129,7 +131,6 @@ bool bIsUseAnsi;
 int iRythmDuration;
 
 int main(int argc, char *argv[]){
-    int iIterator;
     uint32_t u32DecryptionKey;
     uint32_t u32Modulus;
 
@@ -205,12 +206,10 @@ int main(int argc, char *argv[]){
     xRsaModule = xRsaKeyGenerator(RSA_MSG_MIN_VALUE, RSA_MSG_MAX_VALUE, RSA_RANDOM_VALUE);
     /* Print results */
     // Decription key partes (Prive key partes)
-    printf("Decryption key pair(save me):\n\
-        decryption key= %d | modulus= %d\n", xRsaModule.u32DecryptionKey, xRsaModule.u32Modulus);
+    printf("Decryption key pair ==> decryption key= %d | modulus= %d  (save me)\n", xRsaModule.u32DecryptionKey, xRsaModule.u32Modulus);
     // Encryption key partes (public key partes)
-    printf("Encryption key pair:\n\
-        encryption key=%d | modulus= %d\n", xRsaModule.u32EncryptionKey, xRsaModule.u32Modulus);
-    printf("  >>>> IMPORTANT: Remember to save the Decryption key pair to use it for the reader version!! <<<<  \n");
+    printf("Encryption key pair ==> encryption key= %d | modulus= %d\n", xRsaModule.u32EncryptionKey, xRsaModule.u32Modulus);
+    printf("  >>>> IMPORTANT: Remember to save the Decryption key pair to use it for the reader version!! <<<<  \n\n");
 
     #if defined(ENABLE_TEST)
     /* ---- test ---- */
@@ -237,16 +236,29 @@ int main(int argc, char *argv[]){
 
     /* ---- File Encryption for applicant ---- */
     // Original file
-    pRawFile = fopen(RAW_FILE_NAME, "r");
-    if(pRawFile==NULL)
-    {
-        printf("Couldn't open %s file\n", RAW_FILE_NAME);
-        vExitProgram(-1);
+    // if RAW_FILE_NAME is empty, the user is required to provide file name with path
+    if(strcmp(RAW_FILE_NAME, "")==0){
+        vGetString(pcFile_str, "Please enter a valide file path to your story: ");
+    }
+    else{
+        strcpy(pcFile_str, RAW_FILE_NAME"\0");
+    }
+    while(1){
+        pRawFile = fopen(pcFile_str, "r");
+        if(pRawFile==NULL)
+        {
+            printf("Couldn't open %s file\n", pcFile_str);
+            printf("Make sure %s is in the correct path and re-run the Application or ", pcFile_str);
+            vGetString(pcFile_str, "enter the path to your story: ");
+        }
+        else{
+            break;
+        }
     }
     fseek(pRawFile, 0, SEEK_END);
     if(ftell(pRawFile)==0)
     {
-        printf("ERROR: File %s is empty\n", RAW_FILE_NAME);
+        printf("ERROR: File %s is empty\n", pcFile_str);
         fclose(pRawFile);
         vExitProgram(-1);
     }
@@ -255,15 +267,24 @@ int main(int argc, char *argv[]){
         fseek(pRawFile, 0, SEEK_SET); // set back file pointer position at the start
     }
     // Encrypted file
-    pEncryptedFile = fopen(ENCRYPTED_FILE_NAME, "w+");
-    if(pEncryptedFile==NULL)
-    {
-        printf("Couldn't create %s file\n", ENCRYPTED_FILE_NAME);
-        vExitProgram(-1);
-    }
-    else
-    {
-        printf("New file %s created\n", ENCRYPTED_FILE_NAME);
+    while(1){
+        // if ENCRYPTED_FILE_NAME is empty, the user is required to provide file name with path
+        if(strcmp(ENCRYPTED_FILE_NAME, "")==0){
+            vGetString(pcFile_str, "Please enter the path to the encrypted story file: ");
+        }
+        else{
+            strcpy(pcFile_str, ENCRYPTED_FILE_NAME"\0");
+        }
+        pEncryptedFile = fopen(pcFile_str, "w+");
+        if(pEncryptedFile==NULL)
+        {
+            printf("Couldn't create %s file\n", pcFile_str);
+        }
+        else
+        {
+            printf("New file %s created\n", pcFile_str);
+            break;
+        }
     }
 
     // File encryption
@@ -326,7 +347,7 @@ int main(int argc, char *argv[]){
     #endif
     else
     {
- 
+        // Pass decryption key pair from app runtime
         printf("Enter the Decryption key number=");
         u32DecryptionKey = u32GetPositiveValue();
         printf("Enter the Modulus number=");
@@ -338,20 +359,33 @@ int main(int argc, char *argv[]){
     #endif
     // we don't need encryption key, so, we set it to -1
     xRsaModule = xSetCustomRsaModule(u32Modulus,-1, u32DecryptionKey);
-    #endif // !defined(BUILD_FOR_WRITER)
-  
-
     // open file
-    pEncryptedFile = fopen(ENCRYPTED_FILE_NAME, "r");
-    if(pEncryptedFile==NULL)
-    {
-        printf("Couldn't open %s file\n", ENCRYPTED_FILE_NAME);
-        vExitProgram(-1);
+    // if ENCRYPTED_FILE_NAME is empty, the user is required to provide file name with path
+    if(strcmp(ENCRYPTED_FILE_NAME, "")==0){
+        vGetString(pcFile_str, "Please enter the path to the encrypted story file name: ");
+    }
+    else{
+        strcpy(pcFile_str, ENCRYPTED_FILE_NAME"\0");
+    }
+    #endif // !defined(BUILD_FOR_WRITER)
+
+    while(1){
+        pEncryptedFile = fopen(pcFile_str, "r"); // in writer version this should be already valid since the writer is the one who created this file in the previous step
+        if(pEncryptedFile==NULL)
+        {
+            
+            printf("Couldn't open %s file\n", pcFile_str);
+            printf("Make sure %s is in the correct path and re-run the Application or ", pcFile_str);
+            vGetString(pcFile_str, "enter the path to the encrypted story file: ");
+        }
+        else{
+            break;
+        }
     }
     fseek(pEncryptedFile, 0, SEEK_END);
     if(ftell(pEncryptedFile)==0)
     {
-        printf("ERROR: File %s is empty\n", ENCRYPTED_FILE_NAME);
+        printf("ERROR: File %s is empty\n", pcFile_str);
         fclose(pEncryptedFile);
         vExitProgram(-1);
     }
@@ -430,6 +464,17 @@ uint32_t u32GetPositiveValue()
     }
 
     return u32RetValue;
+}
+
+// get or read string from user input
+void vGetString(char pcStrHolder[], char* pcMessage)
+{
+    while(1){
+        printf("%s\n", pcMessage);
+        fgets(pcStrHolder, MAX_FILE_NAME_LEN, stdin);
+        pcStrHolder[strlen(pcStrHolder)-1]='\0';
+        break;
+    }
 }
 
 // Get or read char from user input and clear stdin buffer for the next read

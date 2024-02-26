@@ -1,11 +1,12 @@
 /* ----- User Configuration ----- */
 // Path to the file you want to encrypte
-#define RAW_FILE_NAME "aboutMe.txt"
+#define RAW_FILE_NAME "../../../docs/aboutMe.txt" // path: StoryTime_Project/docs/aboutMe.txt
 // Path to the encrypted file
-#define ENCRYPTED_FILE_NAME "aboutMe_encrypted.txt"
+#define ENCRYPTED_FILE_NAME "../../../docs/aboutMe_encrypted.txt" // path: StoryTime_Project/docs/aboutMe_encrypted.txt
 // Terminal Titile
 #define CT_TITLE "Story Time App"
 
+#define MAX_FILE_NAME_LEN   200 // This is the max length of the encrypted and story file name and path
 //#define BUILD_FOR_WRITER // use this macro to choose between building a reader or writer version (this macro is defined by the Makefile)
 //#define ENABLE_TEST // use this macro to include and run your tests
 
