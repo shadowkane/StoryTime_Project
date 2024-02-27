@@ -40,7 +40,7 @@ error_msg = "Only one option is allowed: release, debug or clean.(you passed($(w
 $(error $(error_msg))
 endif
 
-$(info MAKECMDGOALS=> $(MAKECMDGOALS))
+#$(info MAKECMDGOALS=> $(MAKECMDGOALS))
 
 PROJECT_NAME =StoryTime
 # Toolchain
@@ -71,19 +71,19 @@ else
 MAIN_FILE_DIR = core
 #MAIN_FILE_NAME = main.c
 endif
-$(info MAIN_FILE_DIR=> $(MAIN_FILE_DIR))
+#$(info MAIN_FILE_DIR=> $(MAIN_FILE_DIR))
 
 SOURCE_DIR = \
 		$(MAIN_FILE_DIR) \
 		core/encryption_rsa \
 		core/common
-$(info SOURCE_DIR=> $(SOURCE_DIR))
+#$(info SOURCE_DIR=> $(SOURCE_DIR))
 # Header directories
 Header_DIR = \
 		core/inc \
 		core/encryption_rsa \
 		core/common
-$(info Header_DIR=> $(Header_DIR))
+#$(info Header_DIR=> $(Header_DIR))
 
 # Build directories
 BUILD_DIR = build
@@ -136,28 +136,28 @@ endif # end of if it's release
 endif # end of if it's clean
 
 endif #end of if TARGET == test
-$(info BIN_DIR=> $(BIN_DIR))
+#$(info BIN_DIR=> $(BIN_DIR))
 
 BIN = $(BIN_DIR)/$(BIN_NAME)
 
 
 # Source files
 SOURCES := $(foreach dir, $(SOURCE_DIR), $(wildcard $(dir)/*.c))
-$(info SOURCES=> $(SOURCES))
+#$(info SOURCES=> $(SOURCES))
 # Header files and directories
 HEADERS := $(foreach dir, $(Header_DIR), $(wildcard $(dir)/*.h))
-$(info HEADERS=> $(HEADERS))
+#$(info HEADERS=> $(HEADERS))
 #INCLUDES := $(dir $(addprefix -I,$(HEADERS)))
 INCLUDES = $(addprefix -I, $(Header_DIR))
-$(info INCLUDES=> $(INCLUDES))
+#$(info INCLUDES=> $(INCLUDES))
 
 # Objects files
 OBJECT_NAMES = $(SOURCES:.c=.o)
-$(info OBJECT_NAMES=> $(OBJECT_NAMES))
+#$(info OBJECT_NAMES=> $(OBJECT_NAMES))
 OBJECT_DIR = $(BIN_DIR)/obj
-$(info OBJECT_DIR=> $(OBJECT_DIR))
+#$(info OBJECT_DIR=> $(OBJECT_DIR))
 OBJECTS = $(patsubst %, $(OBJECT_DIR)/%, $(OBJECT_NAMES))
-$(info OBJECTS=> $(OBJECTS))
+#$(info OBJECTS=> $(OBJECTS))
 
 
 .PHONY: all release debug test clean
