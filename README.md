@@ -23,7 +23,7 @@ the project has 2 different builds, one for the writer and the other for the rea
     + Use directives or tags to set the narration style.
   + Show a preview of the story.
 ### Reader version:
-  + Decrypt the story file and run the narration system.
+  + Decrypt the story file and run the narration module.
 
 # Build
 To build the project, you can use the make command with a variety of options:
@@ -47,22 +47,30 @@ To build the project, you can use the make command with a variety of options:
 # How it works
 You need to build two versions, writer and reader, this is how each one is working: 
 ### Writer:
-- Before you build the project:
+- Preparation and Configuration:
   + Provide your story as a text file and use tags to customize your narration style.
-  + Set your configuration in config.h file by providing the path to your file and set the encrypted file name you will generate(optional), olso you can change the application title.
-- After building the Application
-  + In Runtime, the app will automatically generate the encryption and decryption key pair, make sure to save the decryption key pair to use it in the reader version of the application.
+  + In config file, set the path to your story and the path where to save the encrypted story, also you can change the application title (for example, change it to the story name).
+- Application runtime:
+  + In case the story file path was incorrect, the application will ask you to set a valid path to your story file.
+  + Next, the application will automatically generate the encryption and decryption key pair along side with the encryption version of your story.
+  + You will have the option to preview the results without the need of the reader version.
 
-  Note: by the way, the encryption system used is RSA
+  > [!IMPORTANT]
+  > Make sure to save the decryption key pair to use it in the reader version of the application.
+
+  > [!NOTE] 
+  >By the way, the encryption system used is RSA
   
 ### Reader:
-- Before you build the app you have few option:
-  + Pre-set the Decryption key pair in the config.h file so the reader won't need to set anything.
-  + instead of using the config.h to set the decryption key, you can provide the reader with the decryption key pair and he will set them in the application runtime.
-- App runtime, one of the 3 cases will happen:
-  + If the reader runs the app using cmd line and provides the private key (like this: `App.exe <decryption_key> <modulus_value>`), the app will consider those as private key and use them for decryption.
-  + If the App runs without parameters (using just `App.exe`), the app will check if the decryption Key pair was already pre-set to be able to decrypt and start narration.
-  If no private key was pre-set, it will ask the reader for those keys
+- Preparation and Configuration:
+  + One of the options to set the decryption key pair is to save it in the config.h file before building the reader version of the project.
+  + In case you need to change the path to the encrypted story, you can edit the config.h file to meet your expectations.
+- Application runtime:
+  + The Application provides more than one option to set the encryption key pair, beside the config.h file, the application will prioritize the key pair that passed as arguments.(like this: `StoryTime <decryption_key> <modulus_value>`)
+  + If the App runs without arguments (using just `StoryTime.exe`), it will check for the default decryption key pair, (those in the config.h file)
+  + If none of the previous option was verified, the App will ask the user (reader) to set the decryption key pair.
+  + The app will check the existence of the story file, if it's not exist, the reader will be required to enter the path to the encrypted story.
+  + After the decryption key pair and the story file path being set correctly, the application will start the narration of the story.
 
 # Narration Style
 The application provide some options for writer to control the story narration:
